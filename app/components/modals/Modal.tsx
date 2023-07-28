@@ -24,7 +24,7 @@ const Modal: React.FC<ModalProps> = ({
     title,
     body,
     footer,
-    actionLabel,
+    actionLabel = 'Submit',
     disabled,
     secondaryAction,
     secondaryActionLabel
@@ -109,7 +109,6 @@ const Modal: React.FC<ModalProps> = ({
                     >
                         <div
                             className="
-                                
                                 translate
                                 h-full
                                 lg:h-auto
