@@ -11,7 +11,7 @@ interface HomeProps {
 }
 
 const Home = async ({ searchParams }: HomeProps) => {
-  let userId = null;
+  let userId: string | undefined = undefined;
   if (searchParams && searchParams.userId) {
     userId = searchParams.userId;
   }
