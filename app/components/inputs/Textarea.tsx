@@ -3,21 +3,21 @@ import { FieldErrors, FieldValues, UseFormRegister } from "react-hook-form";
 interface TextareaProps {
   id: string;
   label: string;
-  type?: string;
   disabled?: boolean;
   required?: boolean;
   register: UseFormRegister<FieldValues>;
   errors: FieldErrors;
+  rows?: number;
 }
 
 const Textarea: React.FC<TextareaProps> = ({
   id,
   label,
-  type = "text",
   disabled,
   register,
   required,
   errors,
+  rows = 7,
 }) => {
   const errorClass = errors[id]
     ? "border-rose-500 focus:border-rose-500 text-rose-500"
@@ -30,8 +30,8 @@ const Textarea: React.FC<TextareaProps> = ({
         disabled={disabled}
         {...register(id, { required })}
         placeholder=" "
-        type={type}
-        className={`peer w-full p-4 pt-6 rows-7 font-light bg-white border-2 rounded-md outline-none transition disabled:opacity-70 disabled:cursor-not-allowed ${errorClass}`}
+        rows={rows}
+        className={`peer w-full p-4 pt-6 font-light bg-white border-2 rounded-md outline-none transition disabled:opacity-70 disabled:cursor-not-allowed ${errorClass}`}
       />
       <label
         htmlFor={id}
