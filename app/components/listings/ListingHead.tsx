@@ -11,7 +11,7 @@ import HeartButton from "../HeartButton";
 
 interface ListingHeadProps {
   title: string;
-  locationValue: string;
+  locationValue: string | null;
   imageSrc: string | string[]; // Can be string or array
   id: string;
   currentUser?: SafeUser | null
@@ -26,7 +26,7 @@ const ListingHead: React.FC<ListingHeadProps> = ({
 }) => {
   const { getByValue } = useCountries();
 
-  const location = getByValue(locationValue);
+  const location = getByValue(locationValue || '');
 
   // Get first image if array
   const imageUrl = Array.isArray(imageSrc) ? imageSrc[0] : imageSrc;

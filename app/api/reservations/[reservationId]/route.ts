@@ -8,14 +8,14 @@ interface IParams {
 
 export async function DELETE(
     request: Request,
-    { params }: { params: IParams }
+    { params }: { params: Promise<IParams> }
 ) {
     const currentUser = await getCurrentUser();
     if (!currentUser?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { reservationId } = params;
+    const { reservationId} = await params;
     if (!reservationId || typeof reservationId !== 'string') {
       return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
     }

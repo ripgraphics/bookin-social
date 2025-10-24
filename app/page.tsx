@@ -7,17 +7,18 @@ import EmptyState from "@/app/components/EmptyState";
 import ListingCard from "./components/listings/ListingCard";
 
 interface HomeProps {
-  searchParams: IListingsParams
+  searchParams: Promise<IListingsParams>
 }
 
 const Home = async ({ searchParams }: HomeProps) => {
+  const resolvedSearchParams = await searchParams;
   let userId: string | undefined = undefined;
-  if (searchParams && searchParams.userId) {
-    userId = searchParams.userId;
+  if (resolvedSearchParams && resolvedSearchParams.userId) {
+    userId = resolvedSearchParams.userId;
   }
   // Fetch listings and user in parallel for better performance
   const [listings, currentUser] = await Promise.all([
-    getListings({ ...searchParams, userId }),
+    getListings({ ...resolvedSearchParams, userId }),
     getCurrentUser()
   ]);
 

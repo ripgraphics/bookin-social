@@ -54,7 +54,7 @@ export default async function getListings (
 
     const safeListings = (data || []).map((row: any) => {
       // Parse imageSrc if it's a JSON string array (take first image)
-      let imageSrc = row.image_src;
+      let imageSrc = row.image_src || '';
       if (typeof imageSrc === 'string' && imageSrc.startsWith('[')) {
         try {
           const parsed = JSON.parse(imageSrc);

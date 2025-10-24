@@ -53,7 +53,7 @@ export type SafeListing = {
   id: string;
   title: string;
   description: string | null;
-  imageSrc?: string | string[]; // Support both single image and array
+  imageSrc: string | string[]; // Support both single image and array (required)
   image_src?: string | string[];
   createdAt: string;
   category: string | null;

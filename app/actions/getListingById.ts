@@ -21,7 +21,7 @@ export default async function getListingById(
     if (error || !data) return null;
 
     // Parse imageSrc if it's a JSON string array
-    let imageSrc = data.image_src;
+    let imageSrc = data.image_src || '';
     if (typeof imageSrc === 'string' && imageSrc.startsWith('[')) {
       try {
         imageSrc = JSON.parse(imageSrc);
