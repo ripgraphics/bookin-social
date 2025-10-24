@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import useCountries from "@/app/hooks/useCountries";
 import { SafeUser } from "@/app/types";
+import { getOptimizedCloudinaryUrl, CLOUDINARY_SIZES } from '@/lib/cloudinary';
 
 import Heading from "../Heading";
 import HeartButton from "../HeartButton";
@@ -11,7 +12,7 @@ import HeartButton from "../HeartButton";
 interface ListingHeadProps {
   title: string;
   locationValue: string;
-  imageSrc: string;
+  imageSrc: string | string[]; // Can be string or array
   id: string;
   currentUser?: SafeUser | null
 }
@@ -26,6 +27,9 @@ const ListingHead: React.FC<ListingHeadProps> = ({
   const { getByValue } = useCountries();
 
   const location = getByValue(locationValue);
+
+  // Get first image if array
+  const imageUrl = Array.isArray(imageSrc) ? imageSrc[0] : imageSrc;
 
   return ( 
     <>
@@ -42,7 +46,7 @@ const ListingHead: React.FC<ListingHeadProps> = ({
         "
       >
         <Image
-          src={imageSrc}
+          src={imageUrl ? getOptimizedCloudinaryUrl(imageUrl, CLOUDINARY_SIZES.hero) : '/images/placeholder.jpg'}
           fill
           className="object-cover w-full"
           alt="Image"

@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-
-import prisma from "@/app/libs/prismadb";
+import { createClient } from "@/lib/supabase/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 
-export async function POST(
-  request: Request, 
-) {
+export async function POST(request: Request) {
   const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.error();
+  if (!currentUser?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
-  const { 
+  const {
     title,
     description,
     imageSrc,
@@ -23,28 +19,29 @@ export async function POST(
     guestCount,
     location,
     price,
-   } = body;
+  } = body || {};
 
-  Object.keys(body).forEach((value: any) => {
-    if (!body[value]) {
-      NextResponse.error();
-    }
-  });
-
-  const listing = await prisma.listing.create({
-    data: {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("listings")
+    .insert({
       title,
       description,
-      imageSrc,
+      image_src: imageSrc,
       category,
-      roomCount,
-      bathroomCount,
-      guestCount,
-      locationValue: location.value,
+      room_count: roomCount,
+      bathroom_count: bathroomCount,
+      guest_count: guestCount,
+      location_value: location?.value,
       price: parseInt(price, 10),
-      userId: currentUser.id
-    }
-  });
+      user_id: currentUser.id,
+    })
+    .select()
+    .single();
 
-  return NextResponse.json(listing);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json(data);
 }

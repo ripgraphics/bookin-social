@@ -1,6 +1,6 @@
-import axios from "axios";
+import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 
 import { SafeUser } from "@/app/types";
@@ -19,11 +19,27 @@ const useFavorite = ({
     const router = useRouter();
     const loginModal = useLoginModal();
 
-    const hasFavorited = useMemo(() => {
-        const list = currentUser?.favoriteIds || [];
+    const supabase = createClient();
+    const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
-        return list.includes(listingId);
-    }, [currentUser, listingId]);
+    useEffect(() => {
+        if (!currentUser?.id) return;
+        let mounted = true;
+        (async () => {
+            const { data } = await supabase
+                .from('user_favorites')
+                .select('listing_id')
+                .eq('user_id', currentUser.id);
+            if (mounted && data) {
+                setFavoriteIds(data.map((r: any) => r.listing_id));
+            }
+        })();
+        return () => { mounted = false };
+    }, [currentUser?.id, supabase]);
+
+    const hasFavorited = useMemo(() => {
+        return favoriteIds.includes(listingId);
+    }, [favoriteIds, listingId]);
 
     const toggleFavorite = useCallback(async (
         e: React.MouseEvent<HTMLDivElement>
@@ -35,15 +51,19 @@ const useFavorite = ({
         }
 
         try {
-            let request;
-
             if (hasFavorited) {
-                request = () => axios.delete(`/api/favorites/${listingId}`);
+                await supabase
+                    .from('user_favorites')
+                    .delete()
+                    .eq('listing_id', listingId)
+                    .eq('user_id', currentUser.id);
+                setFavoriteIds((prev) => prev.filter((id) => id !== listingId));
             } else {
-                request = () => axios.post(`/api/favorites/${listingId}`);
+                await supabase
+                    .from('user_favorites')
+                    .insert({ user_id: currentUser.id, listing_id: listingId });
+                setFavoriteIds((prev) => prev.concat(listingId));
             }
-
-            await request();
             router.refresh();
             toast.success('Success');
         } catch (error) {

@@ -15,7 +15,10 @@ interface InputProps {
   formatPrice?: boolean;
   required?: boolean;
   register: UseFormRegister<FieldValues>,
-  errors: FieldErrors
+  errors: FieldErrors,
+  multiline?: boolean;
+  rows?: number;
+  placeholder?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -27,10 +30,13 @@ const Input: React.FC<InputProps> = ({
   register,
   required,
   errors,
+  multiline = false,
+  rows = 3,
+  placeholder,
 }) => {
   return (
     <div className="w-full relative">
-      {formatPrice && (
+      {formatPrice && !multiline && (
         <BiDollar
           size={24}  
           className="
@@ -41,30 +47,65 @@ const Input: React.FC<InputProps> = ({
           "
         />
       )}
-      <input
-        id={id}
-        disabled={disabled}
-        {...register(id, { required })}
-        placeholder=" "
-        type={type}
-        className={`
-          peer
-          w-full
-          p-4
-          pt-6 
-          font-light 
-          bg-white 
-          border-2
-          rounded-md
-          outline-none
-          transition
-          disabled:opacity-70
-          disabled:cursor-not-allowed
-          ${formatPrice ? 'pl-9' : 'pl-4'}
-          ${errors[id] ? 'border-rose-500' : 'border-neutral-300'}
-          ${errors[id] ? 'focus:border-rose-500' : 'focus:border-black'}
-        `}
-      />
+      
+      {multiline ? (
+        <textarea
+          id={id}
+          disabled={disabled}
+          {...register(id, { required })}
+          placeholder={placeholder || " "}
+          rows={rows}
+          className={`
+            peer
+            w-full
+            p-4
+            pt-6 
+            font-light 
+            bg-white 
+            border-2
+            rounded-md
+            outline-none
+            transition
+            disabled:opacity-70
+            disabled:cursor-not-allowed
+            resize-none
+            overflow-y-auto
+            ${errors[id] ? 'border-rose-500' : 'border-neutral-300'}
+            ${errors[id] ? 'focus:border-rose-500' : 'focus:border-black'}
+          `}
+          style={{
+            whiteSpace: 'pre-wrap',
+            wordWrap: 'break-word',
+            lineHeight: '1.5',
+          }}
+        />
+      ) : (
+        <input
+          id={id}
+          disabled={disabled}
+          {...register(id, { required })}
+          placeholder={placeholder || " "}
+          type={type}
+          className={`
+            peer
+            w-full
+            p-4
+            pt-6 
+            font-light 
+            bg-white 
+            border-2
+            rounded-md
+            outline-none
+            transition
+            disabled:opacity-70
+            disabled:cursor-not-allowed
+            ${formatPrice ? 'pl-9' : 'pl-4'}
+            ${errors[id] ? 'border-rose-500' : 'border-neutral-300'}
+            ${errors[id] ? 'focus:border-rose-500' : 'focus:border-black'}
+          `}
+        />
+      )}
+      
       <label 
         className={`
           absolute 
@@ -75,7 +116,7 @@ const Input: React.FC<InputProps> = ({
           top-5 
           z-10 
           origin-[0] 
-          ${formatPrice ? 'left-9' : 'left-4'}
+          ${formatPrice && !multiline ? 'left-9' : 'left-4'}
           peer-placeholder-shown:scale-100 
           peer-placeholder-shown:translate-y-0 
           peer-focus:scale-75

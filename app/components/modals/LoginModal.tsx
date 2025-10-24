@@ -1,7 +1,6 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
-import axios from 'axios';
+import { createClient } from '@/lib/supabase/client';
 import { AiFillGithub } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { useCallback, useState } from "react";
@@ -42,27 +41,24 @@ const LoginModal = () => {
         }
     });
 
-    const onSubmit: SubmitHandler<FieldValues> = 
-    (data) => {
+    const supabase = createClient();
+
+    const onSubmit: SubmitHandler<FieldValues> = async (data) => {
       setIsLoading(true);
-  
-      signIn('credentials', { 
-        ...data, 
-        redirect: false,
-      })
-      .then((callback) => {
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        if (error) throw error;
+        toast.success('Logged in');
+        router.refresh();
+        loginModal.onClose();
+      } catch (e: any) {
+        toast.error(e?.message || 'Invalid credentials');
+      } finally {
         setIsLoading(false);
-  
-        if (callback?.ok) {
-          toast.success('Logged in');
-          router.refresh();
-          loginModal.onClose();
-        }
-        
-        if (callback?.error) {
-          toast.error(callback.error);
-        }
-      });
+      }
     }
 
     const toggle = useCallback(() => {
@@ -102,13 +98,17 @@ const LoginModal = () => {
                 outline 
                 label="Continue with Google"
                 icon={FcGoogle}
-                onClick={() => signIn('google')} 
+                onClick={async () => {
+                  await supabase.auth.signInWithOAuth({ provider: 'google' });
+                }} 
             />
             <Button 
                 outline 
                 label="Continue with Github"
                 icon={AiFillGithub}
-                onClick={() => signIn('github')} 
+                onClick={async () => {
+                  await supabase.auth.signInWithOAuth({ provider: 'github' });
+                }} 
             />
             <div 
                 className="

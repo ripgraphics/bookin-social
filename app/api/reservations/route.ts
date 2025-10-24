@@ -1,45 +1,35 @@
 import { NextResponse } from "next/server";
-
-import prisma from "@/app/libs/prismadb";
 import getCurrentUser from "@/app/actions/getCurrentUser";
+import { createClient } from "@/lib/supabase/server";
 
-export async function POST(
-  request: Request, 
-) {
+export async function POST(request: Request) {
   const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.error();
+  if (!currentUser?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
-  
-  const { 
-    listingId,
-    startDate,
-    endDate,
-    totalPrice
-   } = body;
-
-   if (!listingId || !startDate || !endDate || !totalPrice) {
-    return NextResponse.error();
+  const { listingId, startDate, endDate, totalPrice } = body || {};
+  if (!listingId || !startDate || !endDate || !totalPrice) {
+    return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  const listingAndReservation = await prisma.listing.update({
-    where: {
-      id: listingId
-    },
-    data: {
-      reservations: {
-        create: {
-          userId: currentUser.id,
-          startDate,
-          endDate,
-          totalPrice,
-        }
-      }
-    }
-  });
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('reservations')
+    .insert({
+      user_id: currentUser.id,
+      listing_id: listingId,
+      start_date: startDate,
+      end_date: endDate,
+      total_price: totalPrice,
+    })
+    .select()
+    .single();
 
-  return NextResponse.json(listingAndReservation);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json(data);
 }

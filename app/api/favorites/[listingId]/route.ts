@@ -1,72 +1,59 @@
 import { NextResponse } from "next/server";
-
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import { createClient } from "@/lib/supabase/server";
 
 interface IParams {
   listingId?: string;
 }
 
 export async function POST(
-  request: Request, 
+  request: Request,
   { params }: { params: IParams }
 ) {
   const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.error();
+  if (!currentUser?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { listingId } = params;
-
   if (!listingId || typeof listingId !== 'string') {
-    throw new Error('Invalid ID');
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
-  let favoriteIds = [...(currentUser.favoriteIds || [])];
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('user_favorites')
+    .insert({ user_id: currentUser.id, listing_id: listingId });
 
-  favoriteIds.push(listingId);
-
-  const user = await prisma.user.update({
-    where: {
-      id: currentUser.id
-    },
-    data: {
-      favoriteIds
-    }
-  });
-
-  return NextResponse.json(user);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(
-  request: Request, 
+  request: Request,
   { params }: { params: IParams }
 ) {
   const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.error();
+  if (!currentUser?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { listingId } = params;
-
   if (!listingId || typeof listingId !== 'string') {
-    throw new Error('Invalid ID');
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
-  let favoriteIds = [...(currentUser.favoriteIds || [])];
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('user_favorites')
+    .delete()
+    .eq('user_id', currentUser.id)
+    .eq('listing_id', listingId);
 
-  favoriteIds = favoriteIds.filter((id) => id !== listingId);
-
-  const user = await prisma.user.update({
-    where: {
-      id: currentUser.id
-    },
-    data: {
-      favoriteIds
-    }
-  });
-
-  return NextResponse.json(user);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+  return NextResponse.json({ success: true });
 }

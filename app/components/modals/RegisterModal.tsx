@@ -1,6 +1,6 @@
 'use client';
 
-import axios from 'axios';
+import { createClient } from '@/lib/supabase/client';
 import { AiFillFacebook, AiFillGithub, AiFillTwitterCircle, AiFillTwitterSquare, AiOutlineTwitter } from "react-icons/ai";
 import { FcGoogle } from "react-icons/fc";
 import { useCallback, useState } from 'react';
@@ -17,7 +17,6 @@ import Heading from '../Heading';
 import Input from '../inputs/Input';
 import { toast } from 'react-hot-toast';
 import Button from '../Button';
-import { signIn } from 'next-auth/react';
 
 const RegisterModal = () => {
     const registerModal = useRegisterModal();
@@ -33,28 +32,38 @@ const RegisterModal = () => {
  }
 } = useForm<FieldValues>({
     defaultValues: {
-        name: '',
+        firstName: '',
+        lastName: '',
         email: '',
         password: ''
     }
 });
 
-const onSubmit: SubmitHandler<FieldValues> = (data) => {
-    setIsLoading(true);
+const supabase = createClient();
 
-    axios.post('/api/register', data)
-        .then((res) => {
-            toast.success('Account created successfully.');
-            registerModal.onClose();
-            loginModal.onOpen();
-        })
-        .catch((error) => {
-            toast.error('Something went wrong.');
-        })
-        .finally(() => {
-            setIsLoading(false);
-        })
+const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+    setIsLoading(true);
+    try {
+        const { error } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: {
+                data: { 
+                    first_name: data.firstName,
+                    last_name: data.lastName
+                }
+            }
+        });
+        if (error) throw error;
+        toast.success('Account created successfully. Check your email.');
+        registerModal.onClose();
+        loginModal.onOpen();
+    } catch (e: any) {
+        toast.error(e?.message || 'Something went wrong.');
+    } finally {
+        setIsLoading(false);
     }
+}
 
     const toggle = useCallback(() => {
         registerModal.onClose();
@@ -76,8 +85,16 @@ const onSubmit: SubmitHandler<FieldValues> = (data) => {
                 required
             />
             <Input 
-                id="name"
-                label="Name"
+                id="firstName"
+                label="First Name"
+                disabled={isLoading}
+                register={register}
+                errors={errors}
+                required
+            />
+            <Input 
+                id="lastName"
+                label="Last Name"
                 disabled={isLoading}
                 register={register}
                 errors={errors}
@@ -86,6 +103,7 @@ const onSubmit: SubmitHandler<FieldValues> = (data) => {
             <Input 
                 id="password"
                 label="Password"
+                type="password"
                 disabled={isLoading}
                 register={register}
                 errors={errors}
@@ -101,13 +119,17 @@ const onSubmit: SubmitHandler<FieldValues> = (data) => {
                 outline 
                 label="Continue with Google"
                 icon={FcGoogle}
-                onClick={() => signIn('google')} 
+                onClick={async () => {
+                  await supabase.auth.signInWithOAuth({ provider: 'google' });
+                }} 
             />
             <Button 
                 outline 
                 label="Continue with Github"
                 icon={AiFillGithub}
-                onClick={() => signIn('github')} 
+                onClick={async () => {
+                  await supabase.auth.signInWithOAuth({ provider: 'github' });
+                }} 
             />
             <div 
                 className="

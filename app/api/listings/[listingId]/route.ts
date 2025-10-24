@@ -1,34 +1,35 @@
 import { NextResponse } from "next/server";
-
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import { createClient } from "@/lib/supabase/server";
 
 interface IParams {
   listingId?: string;
 }
 
 export async function DELETE(
-  request: Request, 
+  request: Request,
   { params }: { params: IParams }
 ) {
   const currentUser = await getCurrentUser();
-
-  if (!currentUser) {
-    return NextResponse.error();
+  if (!currentUser?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { listingId } = params;
-
   if (!listingId || typeof listingId !== 'string') {
-    throw new Error('Invalid ID');
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
-  const listing = await prisma.listing.deleteMany({
-    where: {
-      id: listingId,
-      userId: currentUser.id
-    }
-  });
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('listings')
+    .delete()
+    .eq('id', listingId)
+    .eq('user_id', currentUser.id);
 
-  return NextResponse.json(listing);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ success: true });
 }

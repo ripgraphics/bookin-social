@@ -23,3 +23,68 @@ body,
   width: 100% !important;
   font-size:16px !important;
 }
+
+/* Custom scrollbar for upload queue and image grid */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-neutral-100 rounded-full;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 rounded-full;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-400;
+}
+
+/* Firefox */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(212 212 212) rgb(245 245 245);
+}
+
+/* Smooth scrolling for horizontal grids */
+.overflow-x-auto {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Textarea enhancements */
+textarea {
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+/* Custom scrollbar for textareas */
+textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+  @apply bg-neutral-100 rounded;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 rounded;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-400;
+}
+
+/* Firefox */
+textarea {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(212 212 212) rgb(245 245 245);
+}
+
+/* Preserve paragraph spacing */
+textarea {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

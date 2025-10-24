@@ -11,6 +11,7 @@ import {
   SafeReservation, 
   SafeUser 
 } from "@/app/types";
+import { getOptimizedCloudinaryUrl, CLOUDINARY_SIZES } from '@/lib/cloudinary';
 
 import HeartButton from "../HeartButton";
 import Button from "../Button";
@@ -70,6 +71,9 @@ const ListingCard: React.FC<ListingCardProps> = ({
     return `${format(start, 'PP')} - ${format(end, 'PP')}`;
   }, [reservation]);
 
+  // Get first image if array
+  const imageUrl = Array.isArray(data.imageSrc) ? data.imageSrc[0] : data.imageSrc;
+
   return (
     <div 
       onClick={() => router.push(`/listings/${data.id}`)} 
@@ -94,7 +98,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
               group-hover:scale-110 
               transition
             "
-            src={data.imageSrc}
+            src={imageUrl ? getOptimizedCloudinaryUrl(imageUrl, CLOUDINARY_SIZES.card) : '/images/placeholder.jpg'}
             alt="Listing"
           />
           <div className="

@@ -50,7 +50,7 @@ const RentModal = () => {
             guestCount: 1,
             roomCount: 1,
             bathroomCount: 1,
-            imageSrc: '',
+            imageSrc: [],
             price: 1,
             title: '',
             description: '',
@@ -208,11 +208,15 @@ const RentModal = () => {
             <div className="flex flex-col gap-8">
                 <Heading
                     title="Add photos of your place"
-                    subtitle="Show guests what your place looks like!"
+                    subtitle="Show guests what your place looks like! (Up to 35 images)"
                 />
                 <ImageUpload
+                    multiple
+                    maxFiles={35}
                     value={imageSrc}
                     onChange={(value) => setCustomValue('imageSrc', value)}
+                    aspectRatio="16:9"
+                    uploadFolder="listings"
                 />
             </div>
         )
@@ -223,7 +227,7 @@ const RentModal = () => {
             <div className="flex flex-col gap-8">
                 <Heading
                     title="How would you describe your place?"
-                    subtitle="Short and sweet works best!"
+                    subtitle="Share what makes your place special!"
                 />
                 <Input 
                     id="title"
@@ -232,6 +236,9 @@ const RentModal = () => {
                     register={register}
                     errors={errors}
                     required
+                    multiline
+                    rows={2}
+                    placeholder="e.g., Cozy Downtown Loft with City Views"
                 />
                 <hr />
                 <Input 
@@ -241,6 +248,9 @@ const RentModal = () => {
                     register={register}
                     errors={errors}
                     required
+                    multiline
+                    rows={6}
+                    placeholder="Describe your space, amenities, and what guests will love about staying here...&#10;&#10;Press Enter twice to create paragraph breaks."
                 />
             </div>
         )

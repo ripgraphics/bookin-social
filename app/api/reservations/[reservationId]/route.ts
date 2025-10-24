@@ -1,37 +1,34 @@
 import { NextResponse } from "next/server";
-
 import getCurrentUser from "@/app/actions/getCurrentUser";
-import prisma from "@/app/libs/prismadb";
+import { createClient } from "@/lib/supabase/server";
 
 interface IParams {
     reservationId?: string;
 }
 
 export async function DELETE(
-    request: Request, 
+    request: Request,
     { params }: { params: IParams }
 ) {
     const currentUser = await getCurrentUser();
-
-    if (!currentUser) {
-            return NextResponse.error();
+    if (!currentUser?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-  const { reservationId } = params;
-
+    const { reservationId } = params;
     if (!reservationId || typeof reservationId !== 'string') {
-        throw new Error('Invalid ID');
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
     }
 
-  const reservation = await prisma.reservation.deleteMany({
-    where: {
-        id: reservationId,
-        OR: [
-            { userId: currentUser.id },
-            { listing: { userId: currentUser.id } }
-        ]
-    }
-  });
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from('reservations')
+      .delete()
+      .eq('id', reservationId);
 
-    return NextResponse.json(reservation);
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
 }

@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { AiOutlineMenu } from 'react-icons/ai';
 import Avatar from '../Avatar';
 import { useCallback, useState } from 'react';
-import { signOut } from 'next-auth/react';
+import { createClient } from '@/lib/supabase/client';
 
 import MenuItem from './MenuItem';
 
@@ -24,6 +24,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
     const registerModal = useRegisterModal();
     const loginModal = useLoginModal();
     const rentModal = useRentModal();
+    const supabase = createClient();
 
     const [isOpen, setIsOpen] = useState(false);
 
@@ -79,7 +80,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
                 >
                     <AiOutlineMenu />
                     <div className="hidden md:block">
-                        <Avatar src={currentUser?.image} />
+                        <Avatar src={currentUser?.avatar_url} />
                     </div>
                 </div>
             </div>
@@ -124,7 +125,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
                             />
                             <hr />
                             <MenuItem 
-                                onClick={() => signOut()}
+                                onClick={async () => { await supabase.auth.signOut(); router.refresh(); router.push('/'); }}
                                 label="Logout" 
                             />
                         </>

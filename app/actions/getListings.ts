@@ -1,4 +1,4 @@
-import prisma from "@/app/libs/prismadb";
+import { createClient } from "@/lib/supabase/server";
 
 export interface IListingsParams {
   userId?: string;
@@ -12,10 +12,11 @@ export interface IListingsParams {
   category?: string;
 }
 
-export default async function getLintings (
+export default async function getListings (
   params: IListingsParams
 ) {
   try {
+    const startTime = Date.now();
     const {
       userId,
       guestCount,
@@ -28,70 +29,61 @@ export default async function getLintings (
       category
     } = params;
 
-    let query: any = {};
+    const sb = await createClient();
+    
+    // Build query with filters - optimized with specific columns and limit
+    let query = sb
+      .from("listings")
+      .select("id, title, description, image_src, created_at, category, room_count, bathroom_count, guest_count, location_value, user_id, price")
+      .order("created_at", { ascending: false })
+      .limit(20);
 
-    if (userId) {
-      query.userId = userId;
+    // Apply filters
+    if (userId) query = query.eq("user_id", userId);
+    if (category) query = query.eq("category", category);
+    if (roomCount) query = query.gte("room_count", +roomCount);
+    if (guestCount) query = query.gte("guest_count", +guestCount);
+    if (bathroomCount) query = query.gte("bathroom_count", +bathroomCount);
+    if (locationValue) query = query.eq("location_value", locationValue);
+
+    const { data, error } = await query;
+    if (error) {
+      console.log(`[getListings] Error: ${error.message}`);
+      throw new Error(error.message);
     }
 
-    if (category) {
-      query.category = category;
-    }
-
-    if (roomCount) {
-      query.roomCount = {
-        gte: +roomCount
-      }
-    }
-
-    if (guestCount) {
-      query.guestCount = {
-        gte: +guestCount
-      }
-    }
-
-    if (bathroomCount) {
-      query.bathroomCount = {
-        gte: +bathroomCount
-      }
-    }
-
-    if (locationValue) {
-      query.locationValue = locationValue;
-    }
-
-    if (startDate && endDate) {
-      query.NOT = {
-        reservations: {
-          some: {
-            OR: [
-              {
-                endDate: { gte: startDate },
-                startDate: { lte: startDate }
-              },
-              {
-                startDate: { lte: endDate },
-                endDate: { gte: endDate }
-              }
-            ]
-          }
+    const safeListings = (data || []).map((row: any) => {
+      // Parse imageSrc if it's a JSON string array (take first image)
+      let imageSrc = row.image_src;
+      if (typeof imageSrc === 'string' && imageSrc.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(imageSrc);
+          imageSrc = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : imageSrc;
+        } catch (e) {
+          console.log(`[getListings] Failed to parse imageSrc for listing ${row.id}`);
         }
       }
-    }
-    
-    const lintings = await prisma.listing.findMany({
-      where: query,
-      orderBy: {
-        createdAt: 'desc',
-      }
+
+      return {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        imageSrc,
+        createdAt: row.created_at,
+        category: row.category,
+        roomCount: row.room_count,
+        bathroomCount: row.bathroom_count,
+        guestCount: row.guest_count,
+        locationValue: row.location_value,
+        userId: row.user_id,
+        price: row.price,
+      };
     });
 
-    const safeLintings = lintings.map((linting) => ({
-      ...linting,
-      createdAt: linting.createdAt.toISOString(),
-    }));
+    const endTime = Date.now();
+    console.log(`[getListings] Query took ${endTime - startTime}ms, returned ${safeListings.length} listings`);
 
-    return safeLintings;
+    return safeListings;
   } catch (error: any) {
     throw new Error(error);
   }

@@ -1,4 +1,4 @@
-import prisma from "@/app/libs/prismadb";
+import { createClient } from "@/lib/supabase/server";
 
 interface IParams {
   listingId?: string;
@@ -9,31 +9,33 @@ export default async function getListingById(
 ) {
   try {
     const { listingId } = params;
+    if (!listingId) return null;
 
-    const listing = await prisma.listing.findUnique({
-      where: {
-        id: listingId,
-      },
-      include: {
-        user: true
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("listings")
+      .select("*")
+      .eq("id", listingId)
+      .single();
+
+    if (error || !data) return null;
+
+    // Parse imageSrc if it's a JSON string array
+    let imageSrc = data.image_src;
+    if (typeof imageSrc === 'string' && imageSrc.startsWith('[')) {
+      try {
+        imageSrc = JSON.parse(imageSrc);
+      } catch (e) {
+        console.log(`[getListingById] Failed to parse imageSrc for listing ${listingId}`);
       }
-    });
-
-    if (!listing) {
-      return null;
     }
 
     return {
-      ...listing,
-      createdAt: listing.createdAt.toString(),
-      user: {
-        ...listing.user,
-        createdAt: listing.user.createdAt.toString(),
-        updatedAt: listing.user.updatedAt.toString(),
-        emailVerified: 
-          listing.user.emailVerified?.toString() || null,
-      }
-    };
+      ...data,
+      image_src: imageSrc,
+      imageSrc: imageSrc, // Also set camelCase version
+      createdAt: data.created_at,
+    } as any;
   } catch (error: any) {
     throw new Error(error);
   }

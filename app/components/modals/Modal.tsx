@@ -155,7 +155,7 @@ const Modal: React.FC<ModalProps> = ({
                                 </div>
                             </div>
                             {/*body*/}
-                            <div className="relative p-6 flex-auto">
+                            <div className="relative p-6 flex-auto max-h-[calc(100vh-300px)] overflow-y-auto">
                                 {body}
                             </div>
                             {/*footer*/}

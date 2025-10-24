@@ -15,8 +15,11 @@ const Home = async ({ searchParams }: HomeProps) => {
   if (searchParams && searchParams.userId) {
     userId = searchParams.userId;
   }
-  const listings = await getListings({ ...searchParams, userId });
-  const currentUser = await getCurrentUser();
+  // Fetch listings and user in parallel for better performance
+  const [listings, currentUser] = await Promise.all([
+    getListings({ ...searchParams, userId }),
+    getCurrentUser()
+  ]);
 
   if (listings.length === 0) {
     return (
