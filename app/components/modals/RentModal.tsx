@@ -239,7 +239,6 @@ const RentModal = () => {
                             [field]: value
                         }));
                     }}
-                    register={register}
                     errors={errors}
                     disabled={isLoading}
                 />

@@ -294,7 +294,6 @@ const EditModal = () => {
               [field]: value
             }));
           }}
-          register={register}
           errors={errors}
           disabled={isLoading}
         />
