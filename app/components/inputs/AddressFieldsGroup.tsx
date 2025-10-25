@@ -1,6 +1,7 @@
 'use client';
 
 import Input from './Input';
+import { UseFormRegister, FieldErrors } from 'react-hook-form';
 
 interface AddressFieldsGroupProps {
   addressLine1: string;
@@ -10,7 +11,8 @@ interface AddressFieldsGroupProps {
   postalCode: string;
   country: string;
   onFieldChange: (field: string, value: string) => void;
-  errors?: Record<string, any>;
+  register: UseFormRegister<any>;
+  errors?: FieldErrors;
   disabled?: boolean;
 }
 
@@ -22,6 +24,7 @@ export default function AddressFieldsGroup({
   postalCode,
   country,
   onFieldChange,
+  register,
   errors = {},
   disabled = false
 }: AddressFieldsGroupProps) {
@@ -34,6 +37,7 @@ export default function AddressFieldsGroup({
         value={addressLine1}
         onChange={(e) => onFieldChange('addressLine1', e.target.value)}
         disabled={disabled}
+        register={register}
         errors={errors}
         required
       />
@@ -45,6 +49,7 @@ export default function AddressFieldsGroup({
         value={addressLine2}
         onChange={(e) => onFieldChange('addressLine2', e.target.value)}
         disabled={disabled}
+        register={register}
         errors={errors}
       />
 
@@ -56,6 +61,7 @@ export default function AddressFieldsGroup({
           value={city}
           onChange={(e) => onFieldChange('city', e.target.value)}
           disabled={disabled}
+          register={register}
           errors={errors}
           required
         />
@@ -65,6 +71,7 @@ export default function AddressFieldsGroup({
           value={stateProvince}
           onChange={(e) => onFieldChange('stateProvince', e.target.value)}
           disabled={disabled}
+          register={register}
           errors={errors}
         />
       </div>
@@ -77,6 +84,7 @@ export default function AddressFieldsGroup({
           value={postalCode}
           onChange={(e) => onFieldChange('postalCode', e.target.value)}
           disabled={disabled}
+          register={register}
           errors={errors}
         />
         <Input
@@ -85,6 +93,7 @@ export default function AddressFieldsGroup({
           value={country}
           onChange={(e) => onFieldChange('country', e.target.value)}
           disabled={disabled}
+          register={register}
           errors={errors}
           required
         />
