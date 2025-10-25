@@ -24,18 +24,18 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
   
-  // Prepare address data for database
+  // Prepare address data for database (only include defined fields)
   const addressData = address ? {
-    address_line1: address.addressLine1,
-    address_line2: address.addressLine2,
-    city: address.city,
-    state_province: address.stateProvince,
-    postal_code: address.postalCode,
-    country: address.country,
-    country_code: address.countryCode,
-    formatted_address: address.formattedAddress,
-    latitude: address.latitude,
-    longitude: address.longitude,
+    ...(address.addressLine1 !== undefined && { address_line1: address.addressLine1 }),
+    ...(address.addressLine2 !== undefined && { address_line2: address.addressLine2 }),
+    ...(address.city !== undefined && { city: address.city }),
+    ...(address.stateProvince !== undefined && { state_province: address.stateProvince }),
+    ...(address.postalCode !== undefined && { postal_code: address.postalCode }),
+    ...(address.country !== undefined && { country: address.country }),
+    ...(address.countryCode !== undefined && { country_code: address.countryCode }),
+    ...(address.formattedAddress !== undefined && { formatted_address: address.formattedAddress }),
+    ...(address.latitude !== undefined && { latitude: address.latitude }),
+    ...(address.longitude !== undefined && { longitude: address.longitude }),
   } : {};
 
   const { data, error } = await supabase

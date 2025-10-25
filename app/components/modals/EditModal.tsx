@@ -13,6 +13,7 @@ import Modal from "./Modal";
 import Counter from "../inputs/Counter";
 import CategoryInput from "../inputs/CategoryInput";
 import AddressInput from "../inputs/AddressInput";
+import AddressFieldsGroup from "../inputs/AddressFieldsGroup";
 import type { AddressData } from "@/lib/geocoding";
 import ImageUpload from "../inputs/ImageUpload";
 import Input from "../inputs/Input";
@@ -34,6 +35,18 @@ const EditModal = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(STEPS.CATEGORY);
+  const [addressFields, setAddressFields] = useState({
+    addressLine1: '',
+    addressLine2: '',
+    city: '',
+    stateProvince: '',
+    postalCode: '',
+    country: '',
+    countryCode: '',
+    latitude: null as number | null,
+    longitude: null as number | null,
+    formattedAddress: '',
+  });
 
   const {
     register,
@@ -65,7 +78,7 @@ const EditModal = () => {
 
   const Map = useMemo(() => dynamic(() => import('../Map'), {
     ssr: false,
-  }), [address]);
+  }), [addressFields.latitude, addressFields.longitude]);
 
   // Fetch listing data when modal opens
   useEffect(() => {
@@ -77,10 +90,10 @@ const EditModal = () => {
           
           // Populate form fields
           setValue('category', listing.category || '');
-          // Convert existing address data to AddressData format
+          
+          // Populate address fields state
           if (listing.formatted_address || listing.city) {
-            const addressData: AddressData = {
-              formattedAddress: listing.formatted_address || `${listing.city}, ${listing.country}`,
+            setAddressFields({
               addressLine1: listing.address_line1 || '',
               addressLine2: listing.address_line2 || '',
               city: listing.city || '',
@@ -88,12 +101,23 @@ const EditModal = () => {
               postalCode: listing.postal_code || '',
               country: listing.country || '',
               countryCode: listing.country_code || '',
-              latitude: listing.latitude || 0,
-              longitude: listing.longitude || 0,
-            };
-            setValue('address', addressData);
+              latitude: listing.latitude || null,
+              longitude: listing.longitude || null,
+              formattedAddress: listing.formatted_address || `${listing.city}, ${listing.country}`,
+            });
           } else {
-            setValue('address', null);
+            setAddressFields({
+              addressLine1: '',
+              addressLine2: '',
+              city: '',
+              stateProvince: '',
+              postalCode: '',
+              country: '',
+              countryCode: '',
+              latitude: null,
+              longitude: null,
+              formattedAddress: '',
+            });
           }
           setValue('guestCount', listing.guestCount || 1);
           setValue('roomCount', listing.roomCount || 1);
@@ -136,12 +160,42 @@ const EditModal = () => {
 
     setIsLoading(true);
 
-    axios.patch(`/api/listings/${editModal.listingId}`, data)
+    // Construct address object from fields
+    const addressData = {
+      addressLine1: addressFields.addressLine1,
+      addressLine2: addressFields.addressLine2,
+      city: addressFields.city,
+      stateProvince: addressFields.stateProvince,
+      postalCode: addressFields.postalCode,
+      country: addressFields.country,
+      countryCode: addressFields.countryCode,
+      latitude: addressFields.latitude,
+      longitude: addressFields.longitude,
+      formattedAddress: addressFields.formattedAddress || 
+        `${addressFields.addressLine1}, ${addressFields.city}, ${addressFields.country}`,
+    };
+
+    axios.patch(`/api/listings/${editModal.listingId}`, {
+      ...data,
+      address: addressData
+    })
       .then(() => {
         toast.success('Listing updated!');
         router.refresh();
         reset();
         setStep(STEPS.CATEGORY);
+        setAddressFields({
+          addressLine1: '',
+          addressLine2: '',
+          city: '',
+          stateProvince: '',
+          postalCode: '',
+          country: '',
+          countryCode: '',
+          latitude: null,
+          longitude: null,
+          formattedAddress: '',
+        });
         editModal.onClose();
       })
       .catch(() => {
@@ -206,13 +260,50 @@ const EditModal = () => {
           title="Where is your place located?"
           subtitle="Help guests find you!"
         />
+        
+        {/* Autocomplete Search */}
         <AddressInput
-          value={address}
-          onChange={(value) => setCustomValue('address', value)}
-          required
+          value={addressFields.formattedAddress ? addressFields as AddressData : null}
+          onChange={(addressData) => {
+            setAddressFields({
+              addressLine1: addressData.addressLine1,
+              addressLine2: addressData.addressLine2 || '',
+              city: addressData.city,
+              stateProvince: addressData.stateProvince || '',
+              postalCode: addressData.postalCode || '',
+              country: addressData.country,
+              countryCode: addressData.countryCode,
+              latitude: addressData.latitude,
+              longitude: addressData.longitude,
+              formattedAddress: addressData.formattedAddress,
+            });
+          }}
         />
+
+        {/* Editable Address Fields */}
+        <AddressFieldsGroup
+          addressLine1={addressFields.addressLine1}
+          addressLine2={addressFields.addressLine2}
+          city={addressFields.city}
+          stateProvince={addressFields.stateProvince}
+          postalCode={addressFields.postalCode}
+          country={addressFields.country}
+          onFieldChange={(field, value) => {
+            setAddressFields(prev => ({
+              ...prev,
+              [field]: value
+            }));
+          }}
+          errors={errors}
+          disabled={isLoading}
+        />
+
+        {/* Map */}
         <Map
-          center={address ? [address.latitude, address.longitude] : undefined}
+          center={addressFields.latitude && addressFields.longitude 
+            ? [addressFields.latitude, addressFields.longitude] 
+            : undefined
+          }
         />
       </div>
     )

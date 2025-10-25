@@ -10,6 +10,7 @@ import Heading from "../Heading";
 import { categories } from "../navbar/Categories";
 import CategoryInput from "../inputs/CategoryInput";
 import AddressInput from "../inputs/AddressInput";
+import AddressFieldsGroup from "../inputs/AddressFieldsGroup";
 import type { AddressData } from "@/lib/geocoding";
 import dynamic from "next/dynamic";
 import Counter from "../inputs/Counter";
@@ -34,6 +35,18 @@ const RentModal = () => {
 
     const [step, setStep] = useState(STEPS.CATEGORY);
     const [isLoading, setIsLoading] = useState(false);
+    const [addressFields, setAddressFields] = useState({
+        addressLine1: '',
+        addressLine2: '',
+        city: '',
+        stateProvince: '',
+        postalCode: '',
+        country: '',
+        countryCode: '',
+        latitude: null as number | null,
+        longitude: null as number | null,
+        formattedAddress: '',
+    });
 
     const {
         register,
@@ -67,7 +80,7 @@ const RentModal = () => {
 
     const Map = useMemo(() => dynamic(() => import('../Map'), {
         ssr: false,
-    }), [address]);
+    }), [addressFields.latitude, addressFields.longitude]);
 
     const setCustomValue = (id: string, value: any) => {
         setValue(id, value, {
@@ -92,12 +105,42 @@ const RentModal = () => {
 
         setIsLoading(true);
 
-        axios.post('/api/listings', data)
+        // Construct address object from fields
+        const addressData = {
+            addressLine1: addressFields.addressLine1,
+            addressLine2: addressFields.addressLine2,
+            city: addressFields.city,
+            stateProvince: addressFields.stateProvince,
+            postalCode: addressFields.postalCode,
+            country: addressFields.country,
+            countryCode: addressFields.countryCode,
+            latitude: addressFields.latitude,
+            longitude: addressFields.longitude,
+            formattedAddress: addressFields.formattedAddress || 
+                `${addressFields.addressLine1}, ${addressFields.city}, ${addressFields.country}`,
+        };
+
+        axios.post('/api/listings', {
+            ...data,
+            address: addressData
+        })
         .then(() => {
             toast.success('Listing created successfully!');
             router.refresh();
             reset();
             setStep(STEPS.CATEGORY);
+            setAddressFields({
+                addressLine1: '',
+                addressLine2: '',
+                city: '',
+                stateProvince: '',
+                postalCode: '',
+                country: '',
+                countryCode: '',
+                latitude: null,
+                longitude: null,
+                formattedAddress: '',
+            });
             rentModal.onClose();
         })
         .catch(() => {
@@ -162,13 +205,50 @@ const RentModal = () => {
                     title="Where is your place located?"
                     subtitle="Help guests find you!"
                 />
+                
+                {/* Autocomplete Search */}
                 <AddressInput
-                    value={address}
-                    onChange={(value) => setCustomValue('address', value)}
-                    required
+                    value={addressFields.formattedAddress ? addressFields as AddressData : null}
+                    onChange={(addressData) => {
+                        setAddressFields({
+                            addressLine1: addressData.addressLine1,
+                            addressLine2: addressData.addressLine2 || '',
+                            city: addressData.city,
+                            stateProvince: addressData.stateProvince || '',
+                            postalCode: addressData.postalCode || '',
+                            country: addressData.country,
+                            countryCode: addressData.countryCode,
+                            latitude: addressData.latitude,
+                            longitude: addressData.longitude,
+                            formattedAddress: addressData.formattedAddress,
+                        });
+                    }}
                 />
+
+                {/* Editable Address Fields */}
+                <AddressFieldsGroup
+                    addressLine1={addressFields.addressLine1}
+                    addressLine2={addressFields.addressLine2}
+                    city={addressFields.city}
+                    stateProvince={addressFields.stateProvince}
+                    postalCode={addressFields.postalCode}
+                    country={addressFields.country}
+                    onFieldChange={(field, value) => {
+                        setAddressFields(prev => ({
+                            ...prev,
+                            [field]: value
+                        }));
+                    }}
+                    errors={errors}
+                    disabled={isLoading}
+                />
+
+                {/* Map */}
                 <Map
-                    center={address ? [address.latitude, address.longitude] : undefined}
+                    center={addressFields.latitude && addressFields.longitude 
+                        ? [addressFields.latitude, addressFields.longitude] 
+                        : undefined
+                    }
                 />
             </div>
         )
