@@ -9,7 +9,8 @@ import Modal from "./Modal";
 import Heading from "../Heading";
 import { categories } from "../navbar/Categories";
 import CategoryInput from "../inputs/CategoryInput";
-import CountrySelect from "../inputs/CountrySelect";
+import AddressInput from "../inputs/AddressInput";
+import type { AddressData } from "@/lib/geocoding";
 import dynamic from "next/dynamic";
 import Counter from "../inputs/Counter";
 import ImageUpload from "../inputs/ImageUpload";
@@ -46,7 +47,7 @@ const RentModal = () => {
     } = useForm<FieldValues>({
         defaultValues: {
             category: '',
-            location: null,
+            address: null,
             guestCount: 1,
             roomCount: 1,
             bathroomCount: 1,
@@ -58,7 +59,7 @@ const RentModal = () => {
     });
 
     const category = watch('category');
-    const location = watch('location');
+    const address = watch('address') as AddressData | null;
     const guestCount = watch('guestCount');
     const roomCount = watch('roomCount');
     const bathroomCount = watch('bathroomCount');
@@ -66,7 +67,7 @@ const RentModal = () => {
 
     const Map = useMemo(() => dynamic(() => import('../Map'), {
         ssr: false,
-    }), [location]);
+    }), [address]);
 
     const setCustomValue = (id: string, value: any) => {
         setValue(id, value, {
@@ -161,12 +162,13 @@ const RentModal = () => {
                     title="Where is your place located?"
                     subtitle="Help guests find you!"
                 />
-                <CountrySelect
-                    value={location}
-                    onChange={(value) => setValue('location', value)}
+                <AddressInput
+                    value={address}
+                    onChange={(value) => setCustomValue('address', value)}
+                    required
                 />
                 <Map
-                    center={location?.latlng}
+                    center={address ? [address.latitude, address.longitude] : undefined}
                 />
             </div>
         )

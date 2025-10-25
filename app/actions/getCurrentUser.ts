@@ -59,11 +59,35 @@ export default async function getCurrentUser() {
         avatarUrl = imageData?.url || null;
       }
 
+      // Get user roles (RBAC system)
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select(`
+          role_id,
+          roles (
+            id,
+            name,
+            display_name,
+            description
+          )
+        `)
+        .eq("user_id", userData.id);
+
+      const roles = rolesData?.map(ur => ur.roles).filter(Boolean) || [];
+      
+      // Get user permissions
+      const { data: permissionsData } = await supabase
+        .rpc('get_user_permissions', { p_user_id: userData.id });
+      
+      const permissions = permissionsData?.map(p => p.permission_name) || [];
+
       const result = {
         id: userData.id,
         firstName: userData.first_name,
         lastName: userData.last_name,
         email: userData.email,
+        roles,
+        permissions,
         createdAt: userData.created_at,
         updatedAt: userData.updated_at,
         emailVerified: null,

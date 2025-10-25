@@ -36,11 +36,21 @@ export type SafeProfile = {
   cover_image?: SafeImage | null;
 };
 
+export type SafeRole = {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string | null;
+  is_system_role?: boolean;
+};
+
 export type SafeUser = {
   id: string; // public.users.id (Own PK, NOT auth.users.id)
   firstName: string; // NOT NULL - required
   lastName: string; // NOT NULL - required
   email: string | null;
+  roles?: SafeRole[]; // User's assigned roles from RBAC system
+  permissions?: string[]; // User's computed permissions
   createdAt: string;
   updatedAt: string;
   emailVerified: string | null;
@@ -60,7 +70,19 @@ export type SafeListing = {
   roomCount: number | null;
   bathroomCount: number | null;
   guestCount: number | null;
-  locationValue: string | null;
+  // Legacy field (deprecated, keeping for backward compatibility)
+  locationValue?: string | null;
+  // New address fields
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  stateProvince?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  countryCode?: string | null;
+  formattedAddress?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   userId?: string;
   user_id?: string;
   price: number;

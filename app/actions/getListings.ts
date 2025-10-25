@@ -34,7 +34,12 @@ export default async function getListings (
     // Build query with filters - optimized with specific columns and limit
     let query = sb
       .from("listings")
-      .select("id, title, description, image_src, created_at, category, room_count, bathroom_count, guest_count, location_value, user_id, price")
+      .select(`
+        id, title, description, image_src, created_at, category, 
+        room_count, bathroom_count, guest_count, location_value, user_id, price,
+        address_line1, address_line2, city, state_province, postal_code, 
+        country, country_code, formatted_address, latitude, longitude
+      `)
       .order("created_at", { ascending: false })
       .limit(20);
 
@@ -74,9 +79,20 @@ export default async function getListings (
         roomCount: row.room_count,
         bathroomCount: row.bathroom_count,
         guestCount: row.guest_count,
-        locationValue: row.location_value,
+        locationValue: row.location_value, // Legacy field
         userId: row.user_id,
         price: row.price,
+        // New address fields
+        addressLine1: row.address_line1,
+        addressLine2: row.address_line2,
+        city: row.city,
+        stateProvince: row.state_province,
+        postalCode: row.postal_code,
+        country: row.country,
+        countryCode: row.country_code,
+        formattedAddress: row.formatted_address,
+        latitude: row.latitude,
+        longitude: row.longitude,
       };
     });
 

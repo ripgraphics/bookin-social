@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import axios from "axios";
 import { eachDayOfInterval, differenceInCalendarDays } from "date-fns";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 
 import { SafeListing, SafeReservation, SafeUser } from "@/app/types";
 import { categories } from "@/app/components/navbar/Categories";
@@ -15,6 +15,10 @@ import ListingInfo from "@/app/components/listings/ListingInfo";
 import ListingReservation from "@/app/components/listings/ListingReservation";
 
 import useLoginModal from "@/app/hooks/useLoginModal";
+import useEditModal from "@/app/hooks/useEditModal";
+import { HiDotsVertical } from "react-icons/hi";
+import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
+import { canEditListing, canDeleteListing } from "@/app/utils/permissions";
 
 const initialDateRange = {
     startDate: new Date(),
@@ -36,7 +40,56 @@ const ListingClient: React.FC<ListingClientProps> = ({
     currentUser
 }) => {
     const loginModal = useLoginModal();
+    const editModal = useEditModal();
     const router = useRouter();
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    // Check permissions using RBAC system
+    const listingOwnerId = listing.user_id || listing.userId || '';
+    const canEdit = canEditListing(currentUser, listingOwnerId);
+    const canDelete = canDeleteListing(currentUser, listingOwnerId);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleEdit = () => {
+        setShowDropdown(false);
+        editModal.onOpen(listing.id);
+    };
+
+    const handleDelete = () => {
+        if (!window.confirm('Are you sure you want to delete this listing?')) {
+            return;
+        }
+
+        setIsDeleting(true);
+        setShowDropdown(false);
+
+        axios.delete(`/api/listings/${listing.id}`)
+            .then(() => {
+                toast.success('Listing deleted successfully!');
+                router.push('/');
+                router.refresh();
+            })
+            .catch((error) => {
+                toast.error('Failed to delete listing');
+            })
+            .finally(() => {
+                setIsDeleting(false);
+            });
+    };
 
     const disabledDates = useMemo(() => {
         let dates: Date[] = [];
@@ -114,6 +167,96 @@ const ListingClient: React.FC<ListingClientProps> = ({
         <Container>
             <div className="max-w-screen-lg mx-auto">
                 <div className="flex flex-col gap-6">
+                    {/* Actions Dropdown Menu */}
+                    {canEdit && (
+                        <div className="flex justify-end">
+                            <div className="relative" ref={dropdownRef}>
+                                {/* 3-Dot Vertical Icon Button */}
+                                <button
+                                    onClick={() => setShowDropdown(!showDropdown)}
+                                    disabled={isDeleting}
+                                    className="
+                                        p-2
+                                        hover:bg-neutral-100
+                                        rounded-full
+                                        transition
+                                        cursor-pointer
+                                        disabled:opacity-50
+                                        disabled:cursor-not-allowed
+                                    "
+                                    aria-label="Listing actions"
+                                >
+                                    <HiDotsVertical size={24} className="text-neutral-600" />
+                                </button>
+
+                                {/* Dropdown Menu */}
+                                {showDropdown && (
+                                    <div className="
+                                        absolute
+                                        right-0
+                                        mt-2
+                                        w-48
+                                        bg-white
+                                        rounded-lg
+                                        shadow-lg
+                                        border
+                                        border-neutral-200
+                                        py-1
+                                        z-50
+                                    ">
+                                        {/* Edit Option */}
+                                        <button
+                                            onClick={handleEdit}
+                                            className="
+                                                w-full
+                                                px-4
+                                                py-3
+                                                text-left
+                                                hover:bg-neutral-50
+                                                transition
+                                                flex
+                                                items-center
+                                                gap-3
+                                                text-neutral-700
+                                            "
+                                        >
+                                            <AiOutlineEdit size={20} />
+                                            <span className="font-medium">Edit Listing</span>
+                                        </button>
+
+                                        {/* Divider */}
+                                        <div className="border-t border-neutral-200 my-1" />
+
+                                        {/* Delete Option */}
+                                        <button
+                                            onClick={handleDelete}
+                                            disabled={isDeleting}
+                                            className="
+                                                w-full
+                                                px-4
+                                                py-3
+                                                text-left
+                                                hover:bg-red-50
+                                                transition
+                                                flex
+                                                items-center
+                                                gap-3
+                                                text-red-600
+                                                disabled:opacity-50
+                                                disabled:cursor-not-allowed
+                                            "
+                                        >
+                                            <AiOutlineDelete size={20} />
+                                            <span className="font-medium">
+                                                {isDeleting ? 'Deleting...' : 'Delete Listing'}
+                                            </span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
                     <ListingHead
                         title={listing.title}
                         imageSrc={listing.imageSrc}

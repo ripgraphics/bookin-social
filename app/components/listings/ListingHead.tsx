@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 
-import useCountries from "@/app/hooks/useCountries";
 import { SafeUser } from "@/app/types";
 import { getOptimizedCloudinaryUrl, CLOUDINARY_SIZES } from '@/lib/cloudinary';
 
@@ -11,7 +10,12 @@ import HeartButton from "../HeartButton";
 
 interface ListingHeadProps {
   title: string;
-  locationValue: string | null;
+  // New address fields
+  formattedAddress?: string | null;
+  city?: string | null;
+  country?: string | null;
+  // Legacy field (for backward compatibility)
+  locationValue?: string | null;
   imageSrc: string | string[]; // Can be string or array
   id: string;
   currentUser?: SafeUser | null
@@ -19,23 +23,46 @@ interface ListingHeadProps {
 
 const ListingHead: React.FC<ListingHeadProps> = ({
   title,
-  locationValue,
+  formattedAddress,
+  city,
+  country,
+  locationValue, // Legacy field
   imageSrc,
   id,
   currentUser
 }) => {
-  const { getByValue } = useCountries();
+  // Create display subtitle from new address fields
+  const getLocationSubtitle = () => {
+    // Use new address fields if available
+    if (formattedAddress) {
+      return formattedAddress;
+    }
+    
+    // Fallback to city, country format
+    if (city && country) {
+      return `${city}, ${country}`;
+    }
+    
+    // Legacy fallback to old locationValue
+    if (locationValue) {
+      return locationValue;
+    }
+    
+    return 'Location not specified';
+  };
 
-  const location = getByValue(locationValue || '');
+  const locationSubtitle = getLocationSubtitle();
 
-  // Get first image if array
-  const imageUrl = Array.isArray(imageSrc) ? imageSrc[0] : imageSrc;
+  // Get first image if array, ensure not null/empty
+  const imageUrl = Array.isArray(imageSrc) 
+    ? (imageSrc[0] || '') 
+    : (imageSrc || '');
 
   return ( 
     <>
       <Heading
         title={title}
-        subtitle={`${location?.region}, ${location?.label}`}
+        subtitle={locationSubtitle}
       />
       <div className="
           w-full
@@ -50,6 +77,7 @@ const ListingHead: React.FC<ListingHeadProps> = ({
           fill
           className="object-cover w-full"
           alt="Image"
+          sizes="100vw"
         />
         <div
           className="

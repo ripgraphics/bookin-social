@@ -17,11 +17,27 @@ export async function POST(request: Request) {
     roomCount,
     bathroomCount,
     guestCount,
-    location,
+    address, // New address object from AddressInput
+    location, // Legacy field for backward compatibility
     price,
   } = body || {};
 
   const supabase = await createClient();
+  
+  // Prepare address data for database
+  const addressData = address ? {
+    address_line1: address.addressLine1,
+    address_line2: address.addressLine2,
+    city: address.city,
+    state_province: address.stateProvince,
+    postal_code: address.postalCode,
+    country: address.country,
+    country_code: address.countryCode,
+    formatted_address: address.formattedAddress,
+    latitude: address.latitude,
+    longitude: address.longitude,
+  } : {};
+
   const { data, error } = await supabase
     .from("listings")
     .insert({
@@ -32,9 +48,10 @@ export async function POST(request: Request) {
       room_count: roomCount,
       bathroom_count: bathroomCount,
       guest_count: guestCount,
-      location_value: location?.value,
+      location_value: location?.value, // Legacy field
       price: parseInt(price, 10),
       user_id: currentUser.id,
+      ...addressData, // Spread new address fields
     })
     .select()
     .single();

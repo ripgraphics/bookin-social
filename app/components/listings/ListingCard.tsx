@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo } from "react";
 import { format } from 'date-fns';
 
-import useCountries from "@/app/hooks/useCountries";
 import { 
   SafeListing, 
   SafeReservation, 
@@ -37,9 +36,31 @@ const ListingCard: React.FC<ListingCardProps> = ({
   currentUser,
 }) => {
   const router = useRouter();
-  const { getByValue } = useCountries();
 
-  const location = getByValue(data.locationValue || '');
+  // Get location display from new address fields
+  const getLocationDisplay = () => {
+    // Use new address fields if available
+    if (data.city && data.country) {
+      return `${data.city}, ${data.country}`;
+    }
+    
+    if (data.city) {
+      return data.city;
+    }
+    
+    if (data.country) {
+      return data.country;
+    }
+    
+    // Legacy fallback
+    if (data.locationValue) {
+      return data.locationValue;
+    }
+    
+    return 'Location not specified';
+  };
+
+  const locationDisplay = getLocationDisplay();
 
   const handleCancel = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -71,8 +92,10 @@ const ListingCard: React.FC<ListingCardProps> = ({
     return `${format(start, 'PP')} - ${format(end, 'PP')}`;
   }, [reservation]);
 
-  // Get first image if array
-  const imageUrl = Array.isArray(data.imageSrc) ? data.imageSrc[0] : data.imageSrc;
+  // Get first image if array, ensure not null/empty
+  const imageUrl = Array.isArray(data.imageSrc) 
+    ? (data.imageSrc[0] || '') 
+    : (data.imageSrc || '');
 
   return (
     <div 
@@ -100,6 +123,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
             "
             src={imageUrl ? getOptimizedCloudinaryUrl(imageUrl, CLOUDINARY_SIZES.card) : '/images/placeholder.jpg'}
             alt="Listing"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           <div className="
             absolute
@@ -113,7 +137,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
           </div>
         </div>
         <div className="font-semibold text-lg">
-          {location?.region}, {location?.label}
+          {locationDisplay}
         </div>
         <div className="font-light text-neutral-500">
           {reservationDate || data.category}
