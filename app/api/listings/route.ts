@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     address, // New address object from AddressInput
     location, // Legacy field for backward compatibility
     price,
+    amenityIds, // Amenity IDs array
   } = body || {};
 
   const supabase = await createClient();
@@ -58,6 +59,25 @@ export async function POST(request: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  const listingId = data.id;
+
+  // Insert amenities if provided
+  if (amenityIds && Array.isArray(amenityIds) && amenityIds.length > 0) {
+    const amenitiesData = amenityIds.map((amenityId: string) => ({
+      listing_id: listingId,
+      amenity_id: amenityId,
+    }));
+
+    const { error: amenitiesError } = await supabase
+      .from('listing_amenities')
+      .insert(amenitiesData);
+
+    if (amenitiesError) {
+      console.error('[POST /api/listings] Error inserting amenities:', amenitiesError);
+      // Don't fail the request if amenities fail to insert
+    }
   }
 
   return NextResponse.json(data);

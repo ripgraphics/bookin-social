@@ -2,6 +2,7 @@
 
 import { IconType } from "react-icons";
 import dynamic from "next/dynamic";
+import ReactMarkdown from 'react-markdown';
 
 import { SafeUser } from "@/app/types";
 
@@ -112,8 +113,10 @@ const ListingInfo: React.FC<ListingInfoProps> = ({
                 />            
             )}
             <hr />
-            <div className="text-lg font-light text-neutral-500">
-                {description}
+            <div className="text-lg font-light text-neutral-500 prose prose-neutral max-w-none prose-p:my-4">
+                <ReactMarkdown>
+                    {description || ''}
+                </ReactMarkdown>
             </div>
             <hr />
             {/* Address Information */}

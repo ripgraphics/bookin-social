@@ -71,7 +71,11 @@ export async function searchAddresses(
     const response = await rateLimitedFetch(url);
 
     if (!response.ok) {
-      console.error('Nominatim search error:', response.statusText);
+      if (response.status === 503 || response.status === 429) {
+        console.warn('Nominatim rate limit reached, please slow down typing...');
+      } else {
+        console.error('Nominatim search error:', response.statusText);
+      }
       return [];
     }
 

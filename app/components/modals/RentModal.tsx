@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { FieldValues, SubmitHandler, useForm } from "react-hook-form";
 
 import userentModal from "@/app/hooks/useRentModal";
@@ -16,6 +16,8 @@ import dynamic from "next/dynamic";
 import Counter from "../inputs/Counter";
 import ImageUpload from "../inputs/ImageUpload";
 import Input from "../inputs/Input";
+import TiptapEditor from "../inputs/TiptapEditor";
+import AmenitySelector from "../inputs/AmenitySelector";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -24,9 +26,10 @@ enum STEPS {
     CATEGORY = 0,
     LOCATION = 1,
     INFO = 2,
-    IMAGES = 3,
-    DESCRIPTION = 4,
-    PRICE = 5
+    AMENITIES = 3,
+    IMAGES = 4,
+    DESCRIPTION = 5,
+    PRICE = 6
 }
 
 const RentModal = () => {
@@ -35,6 +38,8 @@ const RentModal = () => {
 
     const [step, setStep] = useState(STEPS.CATEGORY);
     const [isLoading, setIsLoading] = useState(false);
+    const [amenities, setAmenities] = useState<any[]>([]);
+    const [selectedAmenityIds, setSelectedAmenityIds] = useState<string[]>([]);
     const [addressFields, setAddressFields] = useState({
         addressLine1: '',
         addressLine2: '',
@@ -68,6 +73,7 @@ const RentModal = () => {
             price: 1,
             title: '',
             description: '',
+            amenityIds: [],
         }
     });
 
@@ -81,6 +87,64 @@ const RentModal = () => {
     const Map = useMemo(() => dynamic(() => import('../Map'), {
         ssr: false,
     }), [addressFields.latitude, addressFields.longitude]);
+
+    // Fetch amenities when modal opens
+    useEffect(() => {
+        if (rentModal.isOpen) {
+            axios.get('/api/amenities')
+                .then(response => {
+                    const flatAmenities = response.data || [];
+                    
+                    // Group amenities by category
+                    const grouped = flatAmenities.reduce((acc: any, amenity: any) => {
+                        const categoryId = amenity.category_id;
+                        const categoryName = amenity.category_name;
+                        
+                        if (!acc[categoryId]) {
+                            acc[categoryId] = {
+                                id: categoryId,
+                                name: categoryName,
+                                amenities: []
+                            };
+                        }
+                        
+                        acc[categoryId].amenities.push({
+                            id: amenity.id,
+                            name: amenity.name,
+                            icon: amenity.icon,
+                            description: amenity.description || null
+                        });
+                        
+                        return acc;
+                    }, {});
+                    
+                    // Convert to array
+                    const groupedArray = Object.values(grouped);
+                    setAmenities(groupedArray);
+                })
+                .catch((error) => {
+                    console.error('Failed to load amenities:', error);
+                    toast.error('Failed to load amenities');
+                    setAmenities([]);
+                });
+        }
+    }, [rentModal.isOpen]);
+
+    // Memoize address change handler to prevent AddressInput from losing focus
+    const handleAddressSelect = useCallback((addressData: AddressData) => {
+        setAddressFields({
+            addressLine1: addressData.addressLine1,
+            addressLine2: addressData.addressLine2 || '',
+            city: addressData.city,
+            stateProvince: addressData.stateProvince || '',
+            postalCode: addressData.postalCode || '',
+            country: addressData.country,
+            countryCode: addressData.countryCode,
+            latitude: addressData.latitude,
+            longitude: addressData.longitude,
+            formattedAddress: addressData.formattedAddress,
+        });
+    }, []);
 
     const setCustomValue = (id: string, value: any) => {
         setValue(id, value, {
@@ -122,13 +186,15 @@ const RentModal = () => {
 
         axios.post('/api/listings', {
             ...data,
-            address: addressData
+            address: addressData,
+            amenityIds: selectedAmenityIds
         })
         .then(() => {
             toast.success('Listing created successfully!');
             router.refresh();
             reset();
             setStep(STEPS.CATEGORY);
+            setSelectedAmenityIds([]);
             setAddressFields({
                 addressLine1: '',
                 addressLine2: '',
@@ -153,11 +219,11 @@ const RentModal = () => {
 
     const actionLabel = useMemo(() => {
         if (step === STEPS.PRICE) {
-          return 'Create'
+            return 'Create'
         }
-    
+
         return 'Next'
-      }, [step]);        
+    }, [step]);        
 
     const secondaryActionLabel = useMemo(() => {
         if (step === STEPS. CATEGORY) {
@@ -209,20 +275,7 @@ const RentModal = () => {
                 {/* Autocomplete Search */}
                 <AddressInput
                     value={addressFields.formattedAddress ? addressFields as AddressData : null}
-                    onChange={(addressData) => {
-                        setAddressFields({
-                            addressLine1: addressData.addressLine1,
-                            addressLine2: addressData.addressLine2 || '',
-                            city: addressData.city,
-                            stateProvince: addressData.stateProvince || '',
-                            postalCode: addressData.postalCode || '',
-                            country: addressData.country,
-                            countryCode: addressData.countryCode,
-                            latitude: addressData.latitude,
-                            longitude: addressData.longitude,
-                            formattedAddress: addressData.formattedAddress,
-                        });
-                    }}
+                    onChange={handleAddressSelect}
                 />
 
                 {/* Editable Address Fields */}
@@ -285,6 +338,22 @@ const RentModal = () => {
         )
     }
 
+    if (step === STEPS.AMENITIES) {
+        bodyContent = (
+            <div className="flex flex-col gap-8">
+                <Heading
+                    title="What amenities do you offer?"
+                    subtitle="Select all that apply"
+                />
+                <AmenitySelector
+                    categories={amenities}
+                    selectedIds={selectedAmenityIds}
+                    onChange={setSelectedAmenityIds}
+                />
+            </div>
+        )
+    }
+
     if (step === STEPS.IMAGES) {
         bodyContent = (
             <div className="flex flex-col gap-8">
@@ -323,16 +392,15 @@ const RentModal = () => {
                     placeholder="e.g., Cozy Downtown Loft with City Views"
                 />
                 <hr />
-                <Input 
+                <TiptapEditor
                     id="description"
                     label="Description"
+                    value={watch('description') || ''}
+                    onChange={(value) => setValue('description', value)}
                     disabled={isLoading}
-                    register={register}
                     errors={errors}
                     required
-                    multiline
-                    rows={6}
-                    placeholder="Describe your space, amenities, and what guests will love about staying here...&#10;&#10;Press Enter twice to create paragraph breaks."
+                    placeholder="Describe your space, amenities, and what guests will love..."
                 />
             </div>
         )

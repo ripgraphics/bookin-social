@@ -39,22 +39,19 @@ const ListingCard: React.FC<ListingCardProps> = ({
 
   // Get location display from new address fields
   const getLocationDisplay = () => {
-    // Use new address fields if available
-    if (data.city && data.country) {
-      return `${data.city}, ${data.country}`;
+    // Show only state/province if available
+    if (data.stateProvince) {
+      return data.stateProvince;
     }
     
+    // Fallback to city if state not available
     if (data.city) {
       return data.city;
     }
     
+    // Fallback to country
     if (data.country) {
       return data.country;
-    }
-    
-    // Legacy fallback
-    if (data.locationValue) {
-      return data.locationValue;
     }
     
     return 'Location not specified';
@@ -105,7 +102,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
       <div className="flex flex-col gap-2 w-full">
         <div 
           className="
-            aspect-square 
+            aspect-video 
             w-full 
             relative 
             overflow-hidden 
@@ -136,7 +133,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
             />
           </div>
         </div>
-        <div className="font-semibold text-lg">
+        <div className="font-semibold text-base">
           {locationDisplay}
         </div>
         <div className="font-light text-neutral-500">

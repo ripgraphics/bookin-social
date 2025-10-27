@@ -2,6 +2,7 @@
 import getCurrentUser from "@/app/actions/getCurrentUser";
 import getListingById from "@/app/actions/getListingById";
 import getReservations from "@/app/actions/getReservations";
+import getListingAmenities, { groupAmenitiesByCategory } from "@/app/actions/getListingAmenities";
 
 import ClientOnly from "@/app/components/ClientOnly";
 import EmptyState from "@/app/components/EmptyState";
@@ -26,12 +27,17 @@ const ListingPage = async ({ params }: { params: Promise<IParams> }) => {
     );
   }
 
+  // Fetch amenities for this listing
+  const listingAmenities = await getListingAmenities(listing.id);
+  const groupedAmenities = groupAmenitiesByCategory(listingAmenities);
+
   return (
     <ClientOnly>
       <ListingClient
         listing={listing}
         reservations={reservations}
         currentUser={currentUser}
+        amenities={groupedAmenities}
       />
     </ClientOnly>
   );

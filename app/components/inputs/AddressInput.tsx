@@ -46,6 +46,16 @@ const AddressInput: React.FC<AddressInputProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Restore focus to input after suggestions load
+  useEffect(() => {
+    if (showDropdown && suggestions.length > 0 && !isLoading && inputRef.current) {
+      // Only restore focus if the input was previously focused
+      if (document.activeElement !== inputRef.current) {
+        inputRef.current.focus();
+      }
+    }
+  }, [showDropdown, suggestions.length, isLoading]);
+
   // Debounced search function
   const performSearch = useCallback(async (searchQuery: string) => {
     if (searchQuery.trim().length < 3) {
@@ -78,10 +88,10 @@ const AddressInput: React.FC<AddressInputProps> = ({
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Set new timer
+    // Set new timer (1000ms to respect Nominatim rate limits)
     debounceTimerRef.current = setTimeout(() => {
       performSearch(newQuery);
-    }, 300);
+    }, 1000);
   };
 
   // Handle suggestion selection
@@ -173,7 +183,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
               setShowDropdown(true);
             }
           }}
-          disabled={disabled || isLoading}
+          disabled={disabled}
           required={required}
           placeholder="Start typing an address..."
           className={`
@@ -197,7 +207,7 @@ const AddressInput: React.FC<AddressInputProps> = ({
         <button
           type="button"
           onClick={handleUseCurrentLocation}
-          disabled={disabled || isLoading}
+          disabled={disabled}
           className="
             absolute
             right-2

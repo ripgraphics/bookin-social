@@ -88,3 +88,104 @@ textarea {
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+
+/* Markdown Editor Styling */
+.w-md-editor {
+  border-radius: 0.375rem;
+  border: 2px solid #d4d4d4;
+  box-shadow: none;
+}
+
+.w-md-editor:focus-within {
+  border-color: #000;
+}
+
+.w-md-editor-toolbar {
+  background: #fafafa;
+  border-bottom: 1px solid #d4d4d4;
+  padding: 8px;
+}
+
+.w-md-editor-toolbar button {
+  color: #404040;
+}
+
+.w-md-editor-toolbar button:hover {
+  background: #fff;
+  color: #000;
+}
+
+.w-md-editor-content {
+  background: #fff;
+}
+
+.w-md-editor-text-pre,
+.w-md-editor-text-input {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Split view styling */
+.w-md-editor-preview {
+  padding: 16px;
+}
+
+/* Error state */
+.w-md-editor-error {
+  border-color: #f43f5e;
+}
+
+/* Tiptap Editor Styling */
+.ProseMirror {
+  outline: none;
+  min-height: 150px;
+}
+
+.ProseMirror p {
+  margin: 1em 0;
+}
+
+.ProseMirror p:first-child {
+  margin-top: 0;
+}
+
+.ProseMirror p:last-child {
+  margin-bottom: 0;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 1em 0 0.5em;
+}
+
+.ProseMirror ul {
+  list-style: disc;
+  padding-left: 1.5em;
+  margin: 1em 0;
+}
+
+.ProseMirror li {
+  margin: 0.5em 0;
+}
+
+.ProseMirror strong {
+  font-weight: 600;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* Placeholder */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}

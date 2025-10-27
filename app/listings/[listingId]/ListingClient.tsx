@@ -13,6 +13,7 @@ import Container from "@/app/components/Container";
 import ListingHead from "@/app/components/listings/ListingHead";
 import ListingInfo from "@/app/components/listings/ListingInfo";
 import ListingReservation from "@/app/components/listings/ListingReservation";
+import ListingAmenities from "@/app/components/listings/ListingAmenities";
 
 import useLoginModal from "@/app/hooks/useLoginModal";
 import useEditModal from "@/app/hooks/useEditModal";
@@ -32,12 +33,14 @@ interface ListingClientProps {
         user: SafeUser
     };
     currentUser?: SafeUser | null;
+    amenities?: any[];
 }
 
 const ListingClient: React.FC<ListingClientProps> = ({
     listing,
     reservations = [],
-    currentUser
+    currentUser,
+    amenities = []
 }) => {
     const loginModal = useLoginModal();
     const editModal = useEditModal();
@@ -260,6 +263,10 @@ const ListingClient: React.FC<ListingClientProps> = ({
                     <ListingHead
                         title={listing.title}
                         imageSrc={listing.imageSrc}
+                        formattedAddress={listing.formatted_address}
+                        city={listing.city}
+                        stateProvince={listing.state_province}
+                        country={listing.country}
                         locationValue={listing.locationValue}
                         id={listing.id}
                         currentUser={currentUser}
@@ -278,6 +285,15 @@ const ListingClient: React.FC<ListingClientProps> = ({
                             roomCount={listing.roomCount}
                             guestCount={listing.guestCount}
                             bathroomCount={listing.bathroomCount}
+                            formattedAddress={listing.formatted_address}
+                            addressLine1={listing.address_line1}
+                            addressLine2={listing.address_line2}
+                            city={listing.city}
+                            stateProvince={listing.state_province}
+                            postalCode={listing.postal_code}
+                            country={listing.country}
+                            latitude={listing.latitude}
+                            longitude={listing.longitude}
                             locationValue={listing.locationValue}
                         />
                         <div
@@ -300,6 +316,13 @@ const ListingClient: React.FC<ListingClientProps> = ({
 
                         </div>
                     </div>
+                    
+                    {/* Amenities Section */}
+                    {amenities.length > 0 && (
+                        <div className="mt-6">
+                            <ListingAmenities amenities={amenities} />
+                        </div>
+                    )}
                 </div>
             </div>
         </Container>

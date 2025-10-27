@@ -36,7 +36,7 @@ export default async function getListings (
       .from("listings")
       .select(`
         id, title, description, image_src, created_at, category, 
-        room_count, bathroom_count, guest_count, location_value, user_id, price,
+        room_count, bathroom_count, guest_count, user_id, price,
         address_line1, address_line2, city, state_province, postal_code, 
         country, country_code, formatted_address, latitude, longitude
       `)
@@ -49,7 +49,8 @@ export default async function getListings (
     if (roomCount) query = query.gte("room_count", +roomCount);
     if (guestCount) query = query.gte("guest_count", +guestCount);
     if (bathroomCount) query = query.gte("bathroom_count", +bathroomCount);
-    if (locationValue) query = query.eq("location_value", locationValue);
+    // Location filtering would now use city, state_province, or country fields
+    if (locationValue) query = query.or(`city.ilike.%${locationValue}%,state_province.ilike.%${locationValue}%,country.ilike.%${locationValue}%`);
 
     const { data, error } = await query;
     if (error) {
@@ -79,7 +80,6 @@ export default async function getListings (
         roomCount: row.room_count,
         bathroomCount: row.bathroom_count,
         guestCount: row.guest_count,
-        locationValue: row.location_value, // Legacy field
         userId: row.user_id,
         price: row.price,
         // New address fields
