@@ -77,3 +77,78 @@ export const CLOUDINARY_FOLDERS = {
 
 export type CloudinaryFolderType = keyof typeof CLOUDINARY_FOLDERS;
 
+/**
+ * Extract public ID from Cloudinary URL
+ * Example: https://res.cloudinary.com/cloud/image/upload/v1234/folder/image.jpg -> folder/image
+ */
+export function extractPublicIdFromUrl(url: string): string | null {
+  if (!url || !url.includes('res.cloudinary.com')) {
+    return null;
+  }
+
+  // Parse URL: https://res.cloudinary.com/{cloud}/image/upload/{version}/{publicId}.{extension}
+  const uploadIndex = url.indexOf('/upload/');
+  if (uploadIndex === -1) {
+    return null;
+  }
+
+  // Get everything after /upload/
+  const afterUpload = url.substring(uploadIndex + 8);
+  
+  // Remove version prefix (v1234567890/)
+  const withoutVersion = afterUpload.replace(/^v\d+\//, '');
+  
+  // Remove file extension
+  const publicId = withoutVersion.replace(/\.[^.]+$/, '');
+  
+  return publicId;
+}
+
+/**
+ * Delete image from Cloudinary using server-side API
+ * Requires CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET environment variables
+ */
+export async function deleteCloudinaryImage(publicId: string): Promise<boolean> {
+  try {
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+    const apiKey = process.env.CLOUDINARY_API_KEY;
+    const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      console.error('[deleteCloudinaryImage] Missing Cloudinary credentials');
+      return false;
+    }
+
+    // Generate timestamp
+    const timestamp = Math.round(new Date().getTime() / 1000);
+
+    // Create signature
+    const crypto = require('crypto');
+    const signatureString = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`;
+    const signature = crypto.createHash('sha1').update(signatureString).digest('hex');
+
+    // Call Cloudinary API
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          public_id: publicId,
+          api_key: apiKey,
+          timestamp,
+          signature,
+        }),
+      }
+    );
+
+    const result = await response.json();
+    return result.result === 'ok';
+  } catch (error) {
+    console.error('[deleteCloudinaryImage] Error:', error);
+    return false;
+  }
+}
+

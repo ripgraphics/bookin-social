@@ -74,7 +74,7 @@ export default function QRCodeDisplay({ qrCodeUrl, secret, userEmail }: QRCodeDi
 
         {/* Manual Entry */}
         <div className="space-y-2">
-          <label className="text-sm font-medium">Can't scan? Enter this code manually:</label>
+          <label className="text-sm font-medium">Can&apos;t scan? Enter this code manually:</label>
           <div className="flex items-center space-x-2">
             <code className="flex-1 p-2 bg-gray-100 rounded text-sm font-mono break-all">
               {secret}

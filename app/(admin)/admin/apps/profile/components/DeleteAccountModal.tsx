@@ -139,7 +139,7 @@ export default function DeleteAccountModal({
             />
             {confirmationText && !isConfirmationValid && (
               <p className="text-sm text-red-600">
-                Please type exactly "DELETE" to confirm
+                Please type exactly &quot;DELETE&quot; to confirm
               </p>
             )}
           </div>

@@ -20,6 +20,13 @@ const nextConfig = {
     experimental: {
         optimizePackageImports: ['react-icons', 'date-fns'],
     },
+    // Allow ESLint warnings during build (only fail on errors)
+    eslint: {
+        ignoreDuringBuilds: false, // Still run ESLint
+    },
+    typescript: {
+        ignoreBuildErrors: false, // Fail on TypeScript errors
+    },
 }
 
 module.exports = nextConfig

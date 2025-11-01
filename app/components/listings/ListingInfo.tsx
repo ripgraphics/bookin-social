@@ -122,7 +122,7 @@ const ListingInfo: React.FC<ListingInfoProps> = ({
             {/* Address Information */}
             {(formattedAddress || addressLine1 || city) && (
                 <div className="flex flex-col gap-2">
-                    <div className="text-lg font-semibold">Where you'll be</div>
+                    <div className="text-lg font-semibold">Where you&apos;ll be</div>
                     <div className="text-neutral-600">
                         {formattedAddress ? (
                             <div>{formattedAddress}</div>
