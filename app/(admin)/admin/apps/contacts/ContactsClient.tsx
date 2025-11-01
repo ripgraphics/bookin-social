@@ -166,12 +166,12 @@ export default function ContactsClient({ currentUser }: ContactsClientProps) {
             className="hidden"
             id="csv-upload"
           />
-          <label htmlFor="csv-upload" className="cursor-pointer">
-            <Button variant="outline" as="span">
+          <Button variant="outline" asChild>
+            <label htmlFor="csv-upload" className="cursor-pointer flex items-center">
               <Upload className="h-4 w-4 mr-2" />
               Import CSV
-            </Button>
-          </label>
+            </label>
+          </Button>
           <Button variant="outline" onClick={exportToCSV}>
             <Download className="h-4 w-4 mr-2" />
             Export CSV
