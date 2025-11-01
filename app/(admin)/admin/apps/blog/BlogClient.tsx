@@ -100,11 +100,13 @@ export default function BlogClient({ currentUser }: BlogClientProps) {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">Content</label>
                 <TiptapEditor
+                  id="content"
+                  label="Content"
                   value={formData.content}
                   onChange={(value) => setFormData({ ...formData, content: value })}
                   placeholder="Write your post content..."
+                  errors={{}}
                 />
               </div>
               <Button onClick={createPost} className="w-full">
