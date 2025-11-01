@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { AiOutlineMenu } from 'react-icons/ai';
 import Avatar from '../Avatar';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 import MenuItem from './MenuItem';
@@ -27,6 +27,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
     const supabase = createClient();
 
     const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
     const toggleOpen = useCallback(() => {
         setIsOpen((value) => !value);
@@ -40,8 +41,31 @@ const UserMenu: React.FC<UserMenuProps> = ({
         rentModal.onOpen();
     }, [currentUser, loginModal, rentModal]);
 
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
+    // Helper to close menu after action
+    const onMenuItemClick = useCallback((action: () => void) => {
+        action();
+        setIsOpen(false);
+    }, []);
+
     return (
-        <div className="relative">
+        <div ref={menuRef} className="relative">
             <div className="flex flex-row items-center gap-3">
                 <div
                     onClick={onRent}
@@ -104,39 +128,47 @@ const UserMenu: React.FC<UserMenuProps> = ({
                     {currentUser ? (
                         <>
                             <MenuItem 
-                                onClick={() => router.push("/trips")}
+                                onClick={() => onMenuItemClick(() => router.push("/apps/profile"))}
+                                label="Profile" 
+                            />
+                            <MenuItem 
+                                onClick={() => onMenuItemClick(() => router.push("/trips"))}
                                 label="My trips" 
                             />
                             <MenuItem 
-                                onClick={() => router.push("/favorites")}
+                                onClick={() => onMenuItemClick(() => router.push("/favorites"))}
                                 label="My favorites" 
                             />
                             <MenuItem 
-                                onClick={() => router.push("/reservations")}
+                                onClick={() => onMenuItemClick(() => router.push("/reservations"))}
                                 label="My reservations" 
                             />
                             <MenuItem 
-                                onClick={() => router.push("/properties")}
+                                onClick={() => onMenuItemClick(() => router.push("/properties"))}
                                 label="My properties" 
                             />
                             <MenuItem 
-                                onClick={rentModal.onOpen}
+                                onClick={() => onMenuItemClick(() => rentModal.onOpen())}
                                 label="Host your home" 
                             />
                             <hr />
                             <MenuItem 
-                                onClick={async () => { await supabase.auth.signOut(); router.refresh(); router.push('/'); }}
+                                onClick={() => onMenuItemClick(async () => { 
+                                    await supabase.auth.signOut();
+                                    // Force a full page reload to ensure fresh server-side data
+                                    window.location.href = '/';
+                                })}
                                 label="Logout" 
                             />
                         </>
                     ) : (                       
                         <>
                             <MenuItem
-                                onClick={loginModal.onOpen}
+                                onClick={() => onMenuItemClick(() => loginModal.onOpen())}
                                 label="Login"
                             />
                             <MenuItem
-                                onClick={registerModal.onOpen}
+                                onClick={() => onMenuItemClick(() => registerModal.onOpen())}
                                 label="Sign up"
                             />
                         </>

@@ -7,11 +7,11 @@ declare global {
 
 const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error("SUPABASE_DB_URL (or DATABASE_URL) must be set to use the shared Postgres pool");
-}
-
 export function getDbPool() {
+  if (!connectionString) {
+    throw new Error("SUPABASE_DB_URL (or DATABASE_URL) must be set to use the shared Postgres pool");
+  }
+
   if (!global.__bookinDbPool) {
     global.__bookinDbPool = new Pool({
       connectionString,

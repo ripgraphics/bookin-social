@@ -51,12 +51,18 @@ const LoginModal = () => {
           password: data.password,
         });
         if (error) throw error;
+        
         toast.success('Logged in');
-        router.refresh();
         loginModal.onClose();
+        
+        // Wait a moment for the auth cookie to be set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Force a full page reload to ensure fresh server-side data
+        // Don't set loading to false since we're navigating away
+        window.location.href = '/';
       } catch (e: any) {
         toast.error(e?.message || 'Invalid credentials');
-      } finally {
         setIsLoading(false);
       }
     }

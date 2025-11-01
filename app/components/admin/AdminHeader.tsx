@@ -125,7 +125,9 @@ export default function AdminHeader({ currentUser }: AdminHeaderProps) {
   const getUserRole = () => {
     if (!currentUser.roles || currentUser.roles.length === 0) return "User";
     const role = currentUser.roles[0];
-    return role.charAt(0).toUpperCase() + role.slice(1).replace("_", " ");
+    // Handle both string and object role formats
+    const roleName = typeof role === 'string' ? role : (role.name || role.display_name || 'User');
+    return roleName.charAt(0).toUpperCase() + roleName.slice(1).replace("_", " ");
   };
 
   return (
