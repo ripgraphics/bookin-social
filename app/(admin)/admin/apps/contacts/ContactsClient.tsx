@@ -56,6 +56,7 @@ export default function ContactsClient({ currentUser }: ContactsClientProps) {
     state_province: "",
     postal_code: "",
     country: "",
+    website: "",
     notes: ""
   });
 
