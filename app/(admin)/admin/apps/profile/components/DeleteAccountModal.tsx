@@ -91,7 +91,7 @@ export default function DeleteAccountModal({
             <Label className="text-sm font-medium">The following will be permanently deleted:</Label>
             <ul className="text-sm text-gray-600 space-y-1 ml-4">
               <li>• Your profile and all personal information</li>
-              <li>• All listings you've created</li>
+              <li>• All listings you&apos;ve created</li>
               <li>• All reservations and bookings</li>
               <li>• All messages and communications</li>
               <li>• All uploaded images and files</li>
