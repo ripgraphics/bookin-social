@@ -8,7 +8,8 @@ interface IParams {
 }
 
 // Detect if we should use optimized direct pg pool approach
-const USE_DIRECT_PG = !!process.env.SUPABASE_DB_URL || !!process.env.DATABASE_URL;
+// Only use in production to avoid max clients issues in development
+const USE_DIRECT_PG = process.env.NODE_ENV === 'production' && (!!process.env.SUPABASE_DB_URL || !!process.env.DATABASE_URL);
 
 export default async function getReservations(
   params: IParams

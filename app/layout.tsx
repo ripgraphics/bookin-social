@@ -2,7 +2,6 @@ import { Nunito } from "next/font/google"
 
 import './globals.css'
 
-import Navbar from "./components/navbar/Navbar";
 import ClientOnly from "./components/ClientOnly";
 import RegisterModal from "./components/modals/RegisterModal";
 import LoginModal from "./components/modals/LoginModal";
@@ -11,7 +10,6 @@ import SearchModal from "./components/modals/SearchModal";
 import EditModal from "./components/modals/EditModal";
 
 import ToasterProvider from "./providers/ToasterProvider";
-import getCurrentUser from "./actions/getCurrentUser";
 
 export const metadata = {
   title: 'BOOKIN.social',
@@ -27,8 +25,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const currentUser = await getCurrentUser();
- 
   return (
     <html lang="en">
       <body className={font.className} suppressHydrationWarning={true}>
@@ -39,11 +35,8 @@ export default async function RootLayout({
           <RentModal />
           <LoginModal />
           <RegisterModal />
-          <Navbar currentUser={currentUser} />
         </ClientOnly>
-        <div className="pb-20 pt-28">
-          {children}
-        </div>
+        {children}
       </body>
     </html>
   )

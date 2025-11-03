@@ -15,9 +15,9 @@ export function getDbPool() {
   if (!global.__bookinDbPool) {
     global.__bookinDbPool = new Pool({
       connectionString,
-      max: 10,
-      idleTimeoutMillis: 30_000,
-      connectionTimeoutMillis: 10_000,
+      max: 5, // Reduced from 10 to prevent max clients error in development
+      idleTimeoutMillis: 10_000, // Reduced from 30s for faster cleanup
+      connectionTimeoutMillis: 30_000, // Increased from 10s to 30s for Supabase
       ssl: connectionString.includes("sslmode=require") ? { rejectUnauthorized: false } : undefined,
     });
   }

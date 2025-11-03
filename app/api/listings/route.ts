@@ -2,6 +2,32 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import getCurrentUser from "@/app/actions/getCurrentUser";
 
+// GET /api/listings
+// Get all listings for the current user
+export async function GET(request: Request) {
+  try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("listings")
+      .select("id, title, description, image_src, category, price, city, country")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json(data || []);
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function POST(request: Request) {
   const currentUser = await getCurrentUser();
   if (!currentUser?.id) {
