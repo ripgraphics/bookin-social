@@ -23,8 +23,22 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Get properties where user is owner or assigned as host/co-host
-    const { data: properties, error } = await supabase
+    // Check if user is admin
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select(`
+        roles (
+          name
+        )
+      `)
+      .eq("user_id", publicUser.id);
+
+    const isAdmin = userRoles?.some((ur: any) => 
+      ur.roles?.name === 'admin' || ur.roles?.name === 'super_admin'
+    );
+
+    // Build query with admin check
+    let query = supabase
       .from("property_management")
       .select(`
         *,
@@ -57,15 +71,24 @@ export async function GET(request: Request) {
             email
           )
         )
-      `)
-      .or(`owner_id.eq.${publicUser.id},id.in.(${await getAssignedPropertyIds(supabase, publicUser.id)})`);
+      `);
+
+    // Admins see all properties, others see only their own or assigned
+    if (!isAdmin) {
+      query = query.or(`owner_id.eq.${publicUser.id},id.in.(${await getAssignedPropertyIds(supabase, publicUser.id)})`);
+    }
+
+    const { data: properties, error } = await query;
 
     if (error) {
       console.error("[GET /api/properties/management] Error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(properties || []);
+    // Add role information for hosts/co-hosts
+    const propertiesWithRole = await addRoleInformation(supabase, properties, publicUser.id);
+
+    return NextResponse.json(propertiesWithRole || []);
   } catch (error: any) {
     console.error("[GET /api/properties/management] Unexpected error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -182,5 +205,28 @@ async function getAssignedPropertyIds(supabase: any, userId: string): Promise<st
   }
   
   return data.map((a: any) => a.property_id).join(",");
+}
+
+// Helper function to add role information to properties for hosts/co-hosts
+async function addRoleInformation(supabase: any, properties: any[], userId: string): Promise<any[]> {
+  if (!properties) return [];
+  
+  // Get user's assignments
+  const { data: assignments } = await supabase
+    .from("property_assignments")
+    .select("property_id, role")
+    .eq("user_id", userId)
+    .eq("status", "active");
+  
+  if (!assignments) return properties;
+  
+  // Create a map of property_id -> role
+  const roleMap = new Map(assignments.map((a: any) => [a.property_id, a.role]));
+  
+  // Add role to properties where user is assigned
+  return properties.map(prop => ({
+    ...prop,
+    role: roleMap.get(prop.id) || null
+  }));
 }
 

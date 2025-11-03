@@ -29,7 +29,21 @@ export async function GET(request: Request) {
     const expense_type = searchParams.get("expense_type");
     const status = searchParams.get("status");
 
-    // Build query - user can see expenses they created or for properties they own
+    // Check if user is admin
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select(`
+        roles (
+          name
+        )
+      `)
+      .eq("user_id", publicUser.id);
+
+    const isAdmin = userRoles?.some((ur: any) => 
+      ur.roles?.name === 'admin' || ur.roles?.name === 'super_admin'
+    );
+
+    // Build query
     let query = supabase
       .from("property_expenses")
       .select(`
@@ -59,8 +73,24 @@ export async function GET(request: Request) {
           invoice_number,
           status
         )
-      `)
-      .order("created_at", { ascending: false });
+      `);
+
+    // Apply role-based filtering at database level
+    if (!isAdmin) {
+      // Get owned property IDs
+      const { data: ownedProperties } = await supabase
+        .from("property_management")
+        .select("id")
+        .eq("owner_id", publicUser.id);
+
+      const ownedPropertyIds = ownedProperties?.map(p => p.id) || [];
+      const ownedPropertyIdsStr = ownedPropertyIds.length > 0 ? ownedPropertyIds.join(',') : '00000000-0000-0000-0000-000000000000';
+
+      // User can see expenses they created OR expenses for properties they own
+      query = query.or(`created_by.eq.${publicUser.id},property_id.in.(${ownedPropertyIdsStr})`);
+    }
+
+    query = query.order("created_at", { ascending: false });
 
     // Apply filters
     if (property_id) {
@@ -80,13 +110,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Filter expenses based on user permissions
-    const filteredExpenses = (expenses || []).filter((expense: any) => {
-      return expense.created_by === publicUser.id || 
-             expense.property_management?.owner_id === publicUser.id;
-    });
-
-    return NextResponse.json(filteredExpenses);
+    return NextResponse.json(expenses || []);
   } catch (error: any) {
     console.error("[GET /api/expenses] Unexpected error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

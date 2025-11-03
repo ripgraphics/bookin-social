@@ -1,6 +1,83 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+// GET /api/payments
+// List payments for the current user
+export async function GET(request: Request) {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Get the user's public.users id
+    const { data: publicUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (!publicUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Check if user is admin
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select(`
+        roles (
+          name
+        )
+      `)
+      .eq("user_id", publicUser.id);
+
+    const isAdmin = userRoles?.some((ur: any) => 
+      ur.roles?.name === 'admin' || ur.roles?.name === 'super_admin'
+    );
+
+    // Build query
+    let query = supabase
+      .from("payments")
+      .select(`
+        *,
+        invoices_v2 (
+          id,
+          invoice_number,
+          invoice_type,
+          property_id,
+          property_management (
+            id,
+            listings (
+              id,
+              title
+            )
+          )
+        )
+      `);
+
+    // Apply role-based filtering
+    if (!isAdmin) {
+      query = query.eq("payer_id", publicUser.id);
+    }
+
+    query = query.order("payment_date", { ascending: false });
+
+    const { data: payments, error } = await query;
+
+    if (error) {
+      console.error("[GET /api/payments] Error:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json(payments || []);
+  } catch (error: any) {
+    console.error("[GET /api/payments] Unexpected error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 // POST /api/payments
 // Create a payment for an invoice
 export async function POST(request: Request) {

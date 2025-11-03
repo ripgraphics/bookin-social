@@ -29,7 +29,8 @@ export default function StatCard({
     yellow: 'bg-yellow-500',
     red: 'bg-red-500',
     purple: 'bg-purple-500',
-    indigo: 'bg-indigo-500'
+    indigo: 'bg-indigo-500',
+    orange: 'bg-orange-500'
   };
 
   const iconBgColor = colorClasses[color as keyof typeof colorClasses] || colorClasses.blue;

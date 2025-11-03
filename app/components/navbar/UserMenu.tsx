@@ -5,6 +5,7 @@ import { AiOutlineMenu } from 'react-icons/ai';
 import Avatar from '../Avatar';
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import axios from 'axios';
 
 import MenuItem from './MenuItem';
 
@@ -27,6 +28,7 @@ const UserMenu: React.FC<UserMenuProps> = ({
     const supabase = createClient();
 
     const [isOpen, setIsOpen] = useState(false);
+    const [hasPMSAccess, setHasPMSAccess] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
 
     const toggleOpen = useCallback(() => {
@@ -40,6 +42,35 @@ const UserMenu: React.FC<UserMenuProps> = ({
 
         rentModal.onOpen();
     }, [currentUser, loginModal, rentModal]);
+
+    // Check if user has PMS access
+    useEffect(() => {
+        const checkPMSAccess = async () => {
+            if (!currentUser) {
+                setHasPMSAccess(false);
+                return;
+            }
+
+            try {
+                // Quick client-side check: admins always have access
+                if (currentUser.roles && currentUser.roles.some(role => 
+                    role.name === 'admin' || role.name === 'super_admin'
+                )) {
+                    setHasPMSAccess(true);
+                    return;
+                }
+
+                // For non-admins, check via API
+                const response = await axios.get('/api/pms/check-access');
+                setHasPMSAccess(response.data.hasAccess);
+            } catch (error) {
+                console.error('Failed to check PMS access:', error);
+                setHasPMSAccess(false);
+            }
+        };
+
+        checkPMSAccess();
+    }, [currentUser]);
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -147,6 +178,12 @@ const UserMenu: React.FC<UserMenuProps> = ({
                                 onClick={() => onMenuItemClick(() => router.push("/properties"))}
                                 label="My properties" 
                             />
+                            {hasPMSAccess && (
+                                <MenuItem 
+                                    onClick={() => onMenuItemClick(() => router.push("/apps/property-management"))}
+                                    label="Property Management" 
+                                />
+                            )}
                             <MenuItem 
                                 onClick={() => onMenuItemClick(() => rentModal.onOpen())}
                                 label="Host your home" 

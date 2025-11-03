@@ -29,7 +29,29 @@ export async function GET(request: Request) {
     const status = searchParams.get("status");
     const property_id = searchParams.get("property_id");
 
-    // Build query - user can see invoices issued to them or by them
+    // Check if user is admin
+    const { data: userRoles } = await supabase
+      .from("user_roles")
+      .select(`
+        roles (
+          name
+        )
+      `)
+      .eq("user_id", publicUser.id);
+
+    const isAdmin = userRoles?.some((ur: any) => 
+      ur.roles?.name === 'admin' || ur.roles?.name === 'super_admin'
+    );
+
+    // Get user's property IDs if owner
+    const { data: ownedProperties } = await supabase
+      .from("property_management")
+      .select("listing_id")
+      .eq("owner_id", publicUser.id);
+
+    const ownedPropertyIds = ownedProperties?.map(p => p.listing_id) || [];
+
+    // Build query
     let query = supabase
       .from("invoices_v2")
       .select(`
@@ -61,9 +83,21 @@ export async function GET(request: Request) {
           unit_price,
           total_amount
         )
-      `)
-      .or(`issued_by.eq.${publicUser.id},issued_to.eq.${publicUser.id}`)
-      .order("created_at", { ascending: false });
+      `);
+
+    // Apply filters based on role
+    if (isAdmin) {
+      // Admins see all invoices
+      query = query;
+    } else if (ownedPropertyIds.length > 0) {
+      // Owners see invoices for their properties OR invoices issued to/by them
+      query = query.or(`issued_by.eq.${publicUser.id},issued_to.eq.${publicUser.id},property_id.in.(${ownedPropertyIds.join(',')})`);
+    } else {
+      // Hosts/Co-Hosts/Guests see invoices issued to them or by them
+      query = query.or(`issued_by.eq.${publicUser.id},issued_to.eq.${publicUser.id}`);
+    }
+
+    query = query.order("created_at", { ascending: false });
 
     // Apply filters
     if (invoice_type) {

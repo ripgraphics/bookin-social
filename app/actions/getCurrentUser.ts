@@ -1,26 +1,19 @@
+import { cache } from 'react';
 import { createClient } from "@/lib/supabase/server";
 import { getSessionUser } from "@/lib/auth/session";
 import { query } from "@/lib/db/pool";
-
-// Simple in-memory cache to prevent duplicate calls
-let userCache: { user: any; timestamp: number } | null = null;
-const CACHE_DURATION = 1000; // 1 second cache
 
 // Detect if we should use optimized direct pg pool approach
 // Only use in production to avoid max clients issues in development
 const USE_DIRECT_PG = process.env.NODE_ENV === 'production' && (!!process.env.SUPABASE_DB_URL || !!process.env.DATABASE_URL);
 
-export default async function getCurrentUser() {
+/**
+ * Get the current authenticated user with their profile, roles, and permissions.
+ * Uses Next.js cache() to ensure request-scoped caching (prevents permission leakage between users).
+ */
+const getCurrentUser = cache(async () => {
   try {
     const startTime = Date.now();
-    
-    // Check cache first
-    if (userCache && Date.now() - userCache.timestamp < CACHE_DURATION) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[getCurrentUser] Cache hit, took ${Date.now() - startTime}ms`);
-      }
-      return userCache.user;
-    }
     
     // Use optimized approach for production (direct pg pool)
     if (USE_DIRECT_PG) {
@@ -35,7 +28,9 @@ export default async function getCurrentUser() {
     }
     return null;
   }
-}
+});
+
+export default getCurrentUser;
 
 /**
  * Optimized approach using direct PostgreSQL queries and JWT decoding
@@ -45,12 +40,10 @@ async function getCurrentUserOptimized(startTime: number) {
   const authUser = await getSessionUser();
   
   if (!authUser) {
-    const result = null;
-    userCache = { user: result, timestamp: Date.now() };
     if (process.env.NODE_ENV === 'development') {
       console.log(`[getCurrentUser] No user found (optimized), took ${Date.now() - startTime}ms`);
     }
-    return result;
+    return null;
   }
 
   // Query users table using auth_user_id
@@ -140,7 +133,6 @@ async function getCurrentUserOptimized(startTime: number) {
     } : null,
   } as any;
 
-  userCache = { user: result, timestamp: Date.now() };
   if (process.env.NODE_ENV === 'development') {
     console.log(`[getCurrentUser] Profile loaded (optimized), took ${Date.now() - startTime}ms`);
   }
@@ -160,12 +152,10 @@ async function getCurrentUserSupabase(startTime: number) {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    const result = null;
-    userCache = { user: result, timestamp: Date.now() };
     if (process.env.NODE_ENV === 'development') {
       console.log(`[getCurrentUser] No user found (supabase), took ${Date.now() - startTime}ms`);
     }
-    return result;
+    return null;
   }
 
   // Query users table using auth_user_id
@@ -245,7 +235,6 @@ async function getCurrentUserSupabase(startTime: number) {
     } : null,
   } as any;
 
-  userCache = { user: result, timestamp: Date.now() };
   if (process.env.NODE_ENV === 'development') {
     console.log(`[getCurrentUser] Profile loaded (supabase), took ${Date.now() - startTime}ms`);
   }
