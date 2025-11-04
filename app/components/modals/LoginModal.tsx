@@ -19,6 +19,7 @@ import Input from "../inputs/Input";
 import { toast } from "react-hot-toast";
 import Button from "../Button";
 import { useRouter } from 'next/navigation'
+import TestUsersList from "./TestUsersList";
 
 const LoginModal = () => {
     const router = useRouter();
@@ -74,6 +75,7 @@ const LoginModal = () => {
 
     const bodyContent = (
         <div className="flex flex-col gap-4">
+            <TestUsersList />
             <Heading 
                 title="Welcome back"
                 subtitle="Login to your account!"
